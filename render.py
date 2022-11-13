@@ -50,14 +50,12 @@ def inspect_trans(trans_info):
     print(print_separator)
    
 
-def vis_vox(ckpt, thick, visualize=True):
+def vis_vox(ckpt, visualize=True):
     density = ckpt["state_dict"]["model.density_data"].detach().cpu()
     links_idx = ckpt["state_dict"]["model.links_idx"].detach().cpu()
     sh_data = ckpt['state_dict']['model.sh_data'].detach().cpu()
     valid = torch.where(density > 0.0)[0].long()
     density, links_idx = density[valid], links_idx[valid].long()
-    # thick = thick[valid]
-    # thick = normalize(thick)
     sh_data = sh_data[valid].numpy().astype(np.float64)
 
     resolution = (
@@ -83,7 +81,7 @@ def vis_vox(ckpt, thick, visualize=True):
         pts_color = np.concatenate([pts_color], axis=0)
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(pts)
-        pcd.colors = o3d.utility.Vector3dVector(sh_data[:,[0,9,18]]/255)
+        pcd.colors = o3d.utility.Vector3dVector(pts_color)
         o3d.visualization.draw_geometries([pcd])
 
 if __name__ == "__main__":
@@ -109,4 +107,4 @@ if __name__ == "__main__":
     trans_info = np.load(trans_info_path)
 
 
-    vis_vox(ckpt=ckpt, thick=thick, visualize=True)
+    vis_vox(ckpt=ckpt, visualize=True)
