@@ -5,7 +5,7 @@ import numpy as np
 
 print_separator = "================="
 
-class ReadScene:
+class Scene:
     def __init__(self, perf_folder, orig_scannet_folder,scene_name):
         super().__init__()
         self.perf_folder = perf_folder
