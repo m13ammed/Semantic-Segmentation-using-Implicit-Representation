@@ -6,6 +6,17 @@ import numpy as np
 print_separator = "================="
 
 class Scene:
+    """
+    Attributes:
+    ckpt: Torch loaded checkpoint
+    init_array: Numpy loaded array
+    thick_array: Numpy loaded array
+    trans_info: Numpy loaded compressed format
+    density: Density points loaded from CKPT
+    links_idx: Voxel positions loaded from CKPT
+    sh_data: Spherical Harmonic Coefficients [9 values for each voxel location]
+    resolution: The rendered resolution of the scene. Default [256,256,256]
+    """
     def __init__(self, perf_folder, orig_scannet_folder,scene_name):
         super().__init__()
         self.perf_folder = perf_folder

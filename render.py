@@ -127,9 +127,9 @@ def eval_sh_bases(basis_dim : int, dirs : torch.Tensor):
                     result[..., 24] = SH_C4[8] * (xx * (xx - 3 * yy) - yy * (3 * xx - yy));
     return result
 
-def _fetch_links(links, processed_ckpt):
-    sh_data =processed_ckpt['sh']
-    density_data = processed_ckpt['density']
+def _fetch_links(links, scene: Scene):
+    sh_data = scene.sh_data
+    density_data = scene.density
     results_sigma = torch.zeros(
         (links.size(0), 1), device=links.device, dtype=torch.float32
     )
@@ -144,8 +144,8 @@ def _fetch_links(links, processed_ckpt):
     results_sh[mask] = sh_data[idxs]
     return results_sigma, results_sh
 
-def render_img(processed_ckpt, cam_params, img_params, batch_size: int = 1):
-    grid = processed_ckpt['grid']
+def render_img(scene: Scene, cam_params, img_params, batch_size: int = 1):
+    grid = scene.links_idx
     rays = generate_rays(cam_params=cam_params, img_params=img_params)
     all_rgb_out = []
     for batch_start in range(0, img_params['height']*img_params['width'], batch_size):
@@ -219,14 +219,14 @@ def render_img(processed_ckpt, cam_params, img_params, batch_size: int = 1):
             links110 = grid[lx + 1, ly + 1, lz]
             links111 = grid[lx + 1, ly + 1, lz + 1]
 
-            sigma000, rgb000 = _fetch_links(links000, processed_ckpt)
-            sigma001, rgb001 = _fetch_links(links001, processed_ckpt)
-            sigma010, rgb010 = _fetch_links(links010, processed_ckpt)
-            sigma011, rgb011 = _fetch_links(links011, processed_ckpt)
-            sigma100, rgb100 = _fetch_links(links100, processed_ckpt)
-            sigma101, rgb101 = _fetch_links(links101, processed_ckpt)
-            sigma110, rgb110 = _fetch_links(links110, processed_ckpt)
-            sigma111, rgb111 = _fetch_links(links111, processed_ckpt)
+            sigma000, rgb000 = _fetch_links(links000, scene=scene)
+            sigma001, rgb001 = _fetch_links(links001, scene=scene)
+            sigma011, rgb011 = _fetch_links(links011, scene=scene)
+            sigma100, rgb100 = _fetch_links(links100, scene=scene)
+            sigma101, rgb101 = _fetch_links(links101, scene=scene)
+            sigma010, rgb010 = _fetch_links(links010, scene=scene)
+            sigma110, rgb110 = _fetch_links(links110, scene=scene)
+            sigma111, rgb111 = _fetch_links(links111, scene=scene)
 
             wa, wb = 1.0 - pos, pos
             c00 = sigma000 * wa[:, 2:] + sigma001 * wb[:, 2:]
@@ -307,13 +307,8 @@ if __name__ == "__main__":
     )
 
     os.makedirs(render_dir, exist_ok=True)
-    # data = read_dataset(scene_folder= scene_folder)
-    # processed_ckpt = parse_ckpt(ckpt=data['ckpt'])
-    # im = render_img(processed_ckpt=processed_ckpt, cam_params=cam_params, img_params=img_params)
+    im = render_img(scene=scene, cam_params=cam_params, img_params=img_params)
 
-    # from matplotlib import pyplot as plt
-    # plt.imshow(data, interpolation='nearest')
-    # plt.show()
 
     vis_vox(links_idx= scene.links_idx, density=scene.density)
 
