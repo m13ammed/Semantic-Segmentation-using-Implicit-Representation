@@ -3,7 +3,7 @@ import json
 import numpy as np
 import open3d as o3d
 import torch
-from read_scene import ReadScene
+from read_scene import Scene
 
 print_separator = "==========="
 SH_C0 = 0.28209479177387814
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         "width":1296,
         "height":968
     } ## Probabbly high res. Low res might be 640, 480
-    scene = ReadScene(
+    scene = Scene(
         perf_folder= perfception_scannet_folder,
         orig_scannet_folder= original_scannet_folder,
         scene_name=scene_name
