@@ -1,7 +1,9 @@
 perfception_scannet_folder = "../PeRFception-ScanNet"
 original_scannet_folder = "../ScanNet/scans"
-scene_name = "plenoxel_scannet_scene0000_00"
+scene_name = "scene0000_00"
+plenoxel_prefix = "plenoxel_scannet_"
 img_dir = "render_model"
+semseg_poly_affix = "_vh_clean_2.labels.ply"
 img_name = "image000.jpg"
 render_dir = "./images"
 cam_params = {

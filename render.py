@@ -2,7 +2,7 @@ import os
 import numpy as np
 import open3d as o3d
 from read_scene import Scene
-from locations import *
+from locations_const import *
 
 
 print_separator = "==========="

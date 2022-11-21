@@ -23,7 +23,7 @@ from pytorch3d.renderer import (
 )
 
 from read_scene import Scene
-from locations import *
+from locations_const import *
 import open3d as o3d
 from scipy.spatial.transform import Rotation as Rot
 
@@ -141,6 +141,8 @@ def generate_cow_renders(
     r2 = (Rot.from_euler('z', 90, degrees=True)*rx).as_matrix()
     r3 = (Rot.from_euler('z', 180, degrees=True)*rx).as_matrix()
     r4 = (Rot.from_euler('z', 270, degrees=True)*rx).as_matrix()
+    print(np.array([r1,r2,r3,r4]))
+    print(T)
 
     cameras = FoVPerspectiveCameras(device=device, R=np.array([r1,r2,r3,r4]), T=T)
 
