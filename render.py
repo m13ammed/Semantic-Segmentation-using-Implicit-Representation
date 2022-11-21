@@ -2,11 +2,7 @@ import os
 import numpy as np
 import open3d as o3d
 from read_scene import Scene
-from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
-from torchvision.io.image import read_image
-from torchvision.transforms.functional import to_pil_image
-from scannet_constants import scannet_classes
-import torch
+from locations import *
 
 
 print_separator = "==========="
@@ -27,31 +23,27 @@ def vis_vox(links_idx, density):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(pts)
     pcd.colors = o3d.utility.Vector3dVector(pts_color)
-    o3d.visualization.draw_geometries([pcd])
+    pcd.estimate_normals()
+    distances = pcd.compute_nearest_neighbor_distance()
+    avg_dist = np.mean(distances)
+    radius = 2 * avg_dist   
+    mesh_o3d = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, o3d.utility.DoubleVector([radius, radius * 2]))
+    o3d.visualization.draw_geometries([mesh_o3d])
+    
 
 if __name__ == "__main__":
-    perfception_scannet_folder = "../PeRFception-ScanNet"
-    original_scannet_folder = "../ScanNet/scans"
-    scene_name = "plenoxel_scannet_scene0000_00"
-    img_dir = "render_model"
-    img_name = "image000.jpg"
-    render_dir = "./images"
-    cam_params = {
-        "fx":1170.187988,
-        "fy":1170.187988,
-        "mx":647.750000,
-        "my":483.750000
-    } # Color
-    img_params = {
-        "width":1296,
-        "height":968
-    } ## Probabbly high res. Low res might be 640, 480
     scene = Scene(
         perf_folder= perfception_scannet_folder,
         orig_scannet_folder= original_scannet_folder,
         scene_name=scene_name
     )
+    pts = scene.links_idx.numpy().astype(np.float64)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(pts)
+    normals = pcd.estimate_normals()
+
+
+
     img_concat = os.path.join(scene.perf_folder,scene_name, img_dir, img_name)
-    seg(image_path=img_concat)
-    # vis_vox(links_idx= scene.links_idx, density=scene.density)
+    vis_vox(links_idx= scene.links_idx, density=scene.density)
 
