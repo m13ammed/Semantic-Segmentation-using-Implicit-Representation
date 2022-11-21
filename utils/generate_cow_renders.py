@@ -25,6 +25,8 @@ from pytorch3d.renderer import (
 from read_scene import Scene
 from locations import *
 import open3d as o3d
+from scipy.spatial.transform import Rotation as Rot
+
 
 
 
@@ -115,11 +117,15 @@ def generate_cow_renders(
     center = verts.mean(0)
     scale = max((verts - center).abs().max(0)[0])
     mesh.offset_verts_(-(center.expand(N, 3)))
-    mesh.scale_verts_((1.0 / float(scale)))
+    # mesh.scale_verts_((1.0 / float(scale)))
 
     # Get a batch of viewing angles.
-    elev = torch.linspace(0, 0, num_views)  # keep constant
-    azim = torch.linspace(-azimuth_range, azimuth_range, num_views) + 180.0
+    elev = torch.linspace(90, 90, num_views)    # keep constant
+    azim = torch.linspace(-azimuth_range, azimuth_range, num_views)+180
+
+    ## Defaults
+    # elev = torch.linspace(0,0, num_views)# keep constant
+    # azim = torch.linspace(-azimuth_range, azimuth_range, num_views) + 180
 
     # Place a point light in front of the object. As mentioned above, the front of
     # the cow is facing the -z direction.
@@ -129,8 +135,14 @@ def generate_cow_renders(
     # viewing angles. All the cameras helper methods support mixed type inputs and
     # broadcasting. So we can view the camera from the a distance of dist=2.7, and
     # then specify elevation and azimuth angles for each viewpoint as tensors.
-    R, T = look_at_view_transform(dist=2.7, elev=elev, azim=azim)
-    cameras = FoVPerspectiveCameras(device=device, R=R, T=T)
+    R, T = look_at_view_transform(dist=1, elev=elev, azim=azim)
+    rx = Rot.from_euler('x', 90, degrees=True)
+    r1 = (Rot.from_euler('z', 0, degrees=True)*rx).as_matrix()
+    r2 = (Rot.from_euler('z', 90, degrees=True)*rx).as_matrix()
+    r3 = (Rot.from_euler('z', 180, degrees=True)*rx).as_matrix()
+    r4 = (Rot.from_euler('z', 270, degrees=True)*rx).as_matrix()
+
+    cameras = FoVPerspectiveCameras(device=device, R=[r1,r2,r3,r4], T=T)
 
     # Define the settings for rasterization and shading. Here we set the output
     # image to be of size 128X128. As we are rendering images for visualization
@@ -141,7 +153,8 @@ def generate_cow_renders(
     # rasterization method is used.  Refer to docs/notes/renderer.md for an
     # explanation of the difference between naive and coarse-to-fine rasterization.
     raster_settings = RasterizationSettings(
-        image_size=[480, 640], blur_radius=0.0, faces_per_pixel=1
+        # image_size=[480, 640], blur_radius=0.0, faces_per_pixel=1
+        image_size=128, blur_radius=0.0, faces_per_pixel=1
     )
 
     # Create a Phong renderer by composing a rasterizer and a shader. The textured
@@ -163,25 +176,27 @@ def generate_cow_renders(
     # Render the cow mesh from each viewing angle
     target_images = renderer(meshes, cameras=cameras, lights=lights)
 
-    # Rasterization settings for silhouette rendering
-    sigma = 1e-4
-    raster_settings_silhouette = RasterizationSettings(
-        image_size=128, blur_radius=np.log(1.0 / 1e-4 - 1.0) * sigma, faces_per_pixel=50
-    )
+    # # Rasterization settings for silhouette rendering
+    # sigma = 1e-4
+    # raster_settings_silhouette = RasterizationSettings(
+    #     image_size=128, blur_radius=np.log(1.0 / 1e-4 - 1.0) * sigma, faces_per_pixel=50
+    # )
 
-    # Silhouette renderer
-    renderer_silhouette = MeshRenderer(
-        rasterizer=MeshRasterizer(
-            cameras=cameras, raster_settings=raster_settings_silhouette
-        ),
-        shader=SoftSilhouetteShader(),
-    )
+    # # Silhouette renderer
+    # renderer_silhouette = MeshRenderer(
+    #     rasterizer=MeshRasterizer(
+    #         cameras=cameras, raster_settings=raster_settings_silhouette
+    #     ),
+    #     shader=SoftSilhouetteShader(),
+    # )
 
-    # Render silhouette images.  The 3rd channel of the rendering output is
-    # the alpha/silhouette channel
-    silhouette_images = renderer_silhouette(meshes, cameras=cameras, lights=lights)
+    # # Render silhouette images.  The 3rd channel of the rendering output is
+    # # the alpha/silhouette channel
+    # silhouette_images = renderer_silhouette(meshes, cameras=cameras, lights=lights)
 
-    # binary silhouettes
-    silhouette_binary = (silhouette_images[..., 3] > 1e-4).float()
+    # # binary silhouettes
+    # silhouette_binary = (silhouette_images[..., 3] > 1e-4).float()
 
+    return cameras, target_images[..., :3]
     return cameras, target_images[..., :3], silhouette_binary
+

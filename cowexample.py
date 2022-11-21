@@ -126,7 +126,8 @@ if __name__ == "__main__":
         orig_scannet_folder= original_scannet_folder,
         scene_name=scene_name
     )
-    target_cameras, target_images, target_silhouettes = generate_cow_renders(num_views=1)
+    # target_cameras, target_images, target_silhouettes = generate_cow_renders(num_views=4)
+    target_cameras, target_images = generate_cow_renders(num_views=4)
     clamp_and_detach = lambda x: x.clamp(0.0, 1.0).cpu().detach().numpy()
     print(target_images.shape[0])
     for idx in range(target_images.shape[0]):
