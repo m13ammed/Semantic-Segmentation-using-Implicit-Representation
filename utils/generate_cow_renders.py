@@ -142,7 +142,7 @@ def generate_cow_renders(
     r3 = (Rot.from_euler('z', 180, degrees=True)*rx).as_matrix()
     r4 = (Rot.from_euler('z', 270, degrees=True)*rx).as_matrix()
 
-    cameras = FoVPerspectiveCameras(device=device, R=[r1,r2,r3,r4], T=T)
+    cameras = FoVPerspectiveCameras(device=device, R=np.array([r1,r2,r3,r4]), T=T)
 
     # Define the settings for rasterization and shading. Here we set the output
     # image to be of size 128X128. As we are rendering images for visualization
@@ -153,8 +153,8 @@ def generate_cow_renders(
     # rasterization method is used.  Refer to docs/notes/renderer.md for an
     # explanation of the difference between naive and coarse-to-fine rasterization.
     raster_settings = RasterizationSettings(
-        # image_size=[480, 640], blur_radius=0.0, faces_per_pixel=1
-        image_size=128, blur_radius=0.0, faces_per_pixel=1
+        image_size=[480, 640], blur_radius=0.0, faces_per_pixel=1
+        # image_size=128, blur_radius=0.0, faces_per_pixel=1
     )
 
     # Create a Phong renderer by composing a rasterizer and a shader. The textured

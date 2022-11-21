@@ -129,11 +129,15 @@ if __name__ == "__main__":
     # target_cameras, target_images, target_silhouettes = generate_cow_renders(num_views=4)
     target_cameras, target_images = generate_cow_renders(num_views=4)
     clamp_and_detach = lambda x: x.clamp(0.0, 1.0).cpu().detach().numpy()
-    print(target_images.shape[0])
     for idx in range(target_images.shape[0]):
         image = (clamp_and_detach(target_images[idx, ..., :3]))
-        plt.imshow(image)
-        plt.show()
+        tensor = image*255
+        tensor = np.array(tensor, dtype=np.uint8)
+        if np.ndim(tensor)>3:
+            assert tensor.shape[0] == 1
+            tensor = tensor[0]
+        img = Image.fromarray(tensor)
+        img.save(os.path.join("./out/",str(idx)+".png"))
     exit()
     for image in target_images[0]:
         transform = T.ToPILImage()
