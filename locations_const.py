@@ -7,10 +7,10 @@ semseg_poly_affix = "_vh_clean_2.labels.ply"
 img_name = "image000.jpg"
 render_dir = "./images"
 cam_params = {
-    "fx":1170.187988,
-    "fy":1170.187988,
-    "mx":647.750000,
-    "my":483.750000
+    "fx":1169.621094,
+    "fy":1167.105103,
+    "mx":646.295044,
+    "my":489.927032
 } # Color
 img_params = {
     "width":1296,

@@ -12,13 +12,22 @@ from pytorch3d.renderer import (
     RasterizationSettings,
     SoftPhongShader,
 )
+from pytorch3d.renderer.mesh.shader import ShaderBase
+from pytorch3d.renderer.mesh.rasterizer import Fragments
+from pytorch3d.structures import Meshes
+
+class SegmentationShader(ShaderBase):
+    def forward(self, fragments: Fragments, meshes: Meshes, **kwargs) -> torch.Tensor:
+        cameras = super()._get_cameras(**kwargs)
+
+        texels = meshes.sample_textures(fragments).clone()
+        return texels[...,0,:]
 
 from read_scene import Scene
 def generate_gt_renders(
     poses, num_views: int = 1, polygon_path: str = "seg.ply", device = torch.device("cpu"), intrinsic = None
 ):
     mesh = IO().load_mesh(polygon_path, device=device)
-    IO().save_mesh(mesh, "out.ply")
     
     verts = mesh.verts_packed()
     N = verts.shape[0]
@@ -44,7 +53,7 @@ def generate_gt_renders(
 
     pose = poses[0]
     pose = torch.tensor(pose)
-    pose[0,1]=-pose[0,1]
+    print(pose)
     pose = pose.inverse()
     # pose = torch.linalg.inv(pose).contiguous()
 
@@ -54,42 +63,44 @@ def generate_gt_renders(
     # M[2,2]=-1.0
 
     R = pose[:3,:3].T
-    # R[:,2] *= -1
+    # R[1,2]*=-1
     # R = R.T
     # print(R)
     # R[2,] *= -1
     # R = R.T
     print(R)
     # print(R)
+    # R *=-1
     T = pose[:3,3:]
+    # T[2] *=-1
     # print(T)
     # print(T, T.shape)
     # R = M @ R @ M.inverse()
     R= np.array(R)
     # print(R)
-    T = M @ T
+    # T = M @ T
     T = np.array(T)
  
     # cameras = FoVPerspectiveCameras(device=device,R=np.array([R]), T=T.T)
     cameras = PerspectiveCameras(
-        focal_length=((cam_params['fy'], cam_params['fx']),),
-        principal_point=((cam_params['my'], cam_params['mx']),),
+        focal_length=((-cam_params['fx'], -cam_params['fy']),),
+        principal_point=((cam_params['mx'], cam_params['my']),),
         in_ndc=False,
-        image_size=((img_params['height'], img_params['width']),),
+        image_size=((img_params['height'],img_params['width']),),
         device=device,
         # K = [intrinsic],
         R=np.array([R]),
         T=T.T
     )
     raster_settings = RasterizationSettings(
-        # image_size=[480, 640], blur_radius=0.0, faces_per_pixel=1
-        image_size=128, blur_radius=0.0, faces_per_pixel=1
+        image_size=[480, 640], blur_radius=0.0, faces_per_pixel=1
+        # image_size=128, blur_radius=0.0, faces_per_pixel=1
     ) 
     blend_params = BlendParams(sigma=1e-4, gamma=1e-4, background_color=(0.0, 0.0, 0.0))
     renderer = MeshRenderer(
         rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
-        shader=SoftPhongShader(
-            device=device, cameras=cameras, lights=lights, blend_params=blend_params
+        shader=SegmentationShader(
+            device=device, cameras=cameras
         ),
     )
     meshes = mesh.extend(num_views)
