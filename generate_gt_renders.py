@@ -29,9 +29,9 @@ def generate_gt_renders(
 ):
     mesh = IO().load_mesh(polygon_path, device=device)
     
-    verts = mesh.verts_packed()
-    N = verts.shape[0]
-    center = verts.mean(0)
+    # verts = mesh.verts_packed()
+    # N = verts.shape[0]
+    # center = verts.mean(0)
     # mesh.offset_verts_(-(center.expand(N, 3)))
     lights = PointLights(device=device, location=[[0.0, 0.0, -3.0]])
 
@@ -54,7 +54,7 @@ def generate_gt_renders(
     pose = poses[0]
     pose = torch.tensor(pose)
     print(pose)
-    pose = pose.inverse()
+    # pose = pose.inverse()
     # pose = torch.linalg.inv(pose).contiguous()
 
 
@@ -63,6 +63,7 @@ def generate_gt_renders(
     # M[2,2]=-1.0
 
     R = pose[:3,:3].T
+    R[[1,0]] *= (-1)
     # R[1,2]*=-1
     # R = R.T
     # print(R)
@@ -72,6 +73,7 @@ def generate_gt_renders(
     # print(R)
     # R *=-1
     T = pose[:3,3:]
+    T = -R @ T
     # T[2] *=-1
     # print(T)
     # print(T, T.shape)
@@ -83,13 +85,14 @@ def generate_gt_renders(
  
     # cameras = FoVPerspectiveCameras(device=device,R=np.array([R]), T=T.T)
     cameras = PerspectiveCameras(
-        focal_length=((-cam_params['fx'], -cam_params['fy']),),
-        principal_point=((cam_params['mx'], cam_params['my']),),
+        # focal_length=((-cam_params['fx'], -cam_params['fy']),),
+        # principal_point=((cam_params['mx'], cam_params['my']),),
         in_ndc=False,
         image_size=((img_params['height'],img_params['width']),),
+        K=np.array([intrinsic]),
         device=device,
         # K = [intrinsic],
-        R=np.array([R]),
+        R=np.array([R.T]),
         T=T.T
     )
     raster_settings = RasterizationSettings(

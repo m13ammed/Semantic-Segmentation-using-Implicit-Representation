@@ -66,7 +66,11 @@ if __name__ == "__main__":
     print(f"loading intrinsic")
     intrinsic = np.loadtxt(os.path.join(perfception_scannet_folder,plenoxel_prefix+scene_name, "intrinsic", "intrinsic_color.txt"))
     intrinsic = intrinsic.astype(np.float32)
-    intrinsic[[2, 3], [2, 3]] = 1
+    # intrinsic[[2, 3], [2, 3]] = 1
+    intrinsic[2,2]=0
+    intrinsic[2,3]=1
+    intrinsic[3,2]=1
+    intrinsic[3,3]=0
 
     # load trans_info
 
