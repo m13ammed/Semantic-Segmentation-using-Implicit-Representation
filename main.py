@@ -49,7 +49,7 @@ if __name__ == "__main__":
                 batch_size=batch_size,
                 compressed=compressed
             )
-            export_images(target_images=target_images, show_only = show_only, batch=batch, batch_size=batch_size,frame_skip=frame_skip)
+            export_images(target_images=target_images, show_only = show_only, batch=batch, batch_size=batch_size,frame_skip=frame_skip, scene_name=scannet_scene.scene_name.split("/")[-2])
 
 
 
