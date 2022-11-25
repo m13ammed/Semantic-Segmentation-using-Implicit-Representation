@@ -12,4 +12,3 @@ For debugging it is useful to turn on compressed (Will show it in 128x128 resolu
 python visualize_gt_png.py -s <scene_name> -p <pose_id>
 ```
 Visualizes the groundtruth png using SCANNET_200 
-
