@@ -1,5 +1,4 @@
 # Semantic-Segmentation-using-Implicit-Representation
-=======
 ## Getting Started
 Modify the locations of the `locations_constant.py` 
 
