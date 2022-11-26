@@ -13,3 +13,21 @@ python visualize_gt_png.py -s <scene_name> -p <pose_id>
 ```
 Visualizes the groundtruth png using SCANNET_200 
 
+## Expected Datastructure
+```
+|
+|
+|-Semantic-Segmentation
+    |-README.MD
+    |-REST OF CODEBASE
+|-PeRFception-ScanNet
+    |-plenoxel_scannet_sceneXXXX_XX
+        |-sample_renders
+            |-pose_id.png
+|-ScanNet
+    |-scans
+        |-sceneXXXX_XX
+            |-pose
+            |-intrinsic
+```
+

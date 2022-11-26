@@ -2,3 +2,5 @@ torch
 torchvision
 numpy
 open3d
+pytorch3d
+

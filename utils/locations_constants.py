@@ -5,6 +5,8 @@ img_dir = "render_model"
 semseg_poly_affix = "_vh_clean_2.labels.ply"
 img_name = "image000.jpg"
 render_dir = "./images"
+sample_renders = "sample_renders"
+labels_folder = "label-filt"
 cam_params = {
     "fx":1169.621094,
     "fy":1167.105103,
