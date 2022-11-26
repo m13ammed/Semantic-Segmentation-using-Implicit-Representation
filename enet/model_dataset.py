@@ -78,6 +78,10 @@ class Perfception(data.Dataset):
             key_20 = remap_200_to_20(key=key)
             idx = label == key
             label[idx] = key_20
+            label[label==13] = 0
+            label[label==31] = 0
+            label[label>40] = 0
+        
         
         return data, label
 

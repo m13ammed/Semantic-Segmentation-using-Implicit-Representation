@@ -22,43 +22,42 @@ if torch.cuda.is_available():
 else: device = torch.device("cpu")
 
 def enet_weighing(dataloader, num_classes, c=1.02):
-	"""Computes class weights as described in the ENet paper:
+    """Computes class weights as described in the ENet paper:
 
-		w_class = 1 / (ln(c + p_class)),
+    	w_class = 1 / (ln(c + p_class)),
 
-	where c is usually 1.02 and p_class is the propensity score of that
-	class:
+    where c is usually 1.02 and p_class is the propensity score of that
+    class:
 
 		propensity_score = freq_class / total_pixels.
 
-	References: https://arxiv.org/abs/1606.02147
+    References: https://arxiv.org/abs/1606.02147
 
-	Keyword arguments:
+    Keyword arguments:
 	- dataloader (``data.Dataloader``): A data loader to iterate over the
 	dataset.
-	- num_classes (``int``): The number of classes.
-	- c (``int``, optional): AN additional hyper-parameter which restricts
-	the interval of values for the weights. Default: 1.02.
+    - num_classes (``int``): The number of classes.
+    - c (``int``, optional): AN additional hyper-parameter which restricts
+    the interval of values for the weights. Default: 1.02.
 
-	"""
-	class_count = 0
-	total = 0
-	for _, label in dataloader:
-		label = label.cpu().numpy()
-
-		# Flatten label
-		flat_label = label.flatten()
+    """
+    class_count = 0
+    total = 0
+    for _, label in dataloader:
+        label = label.cpu().numpy()
+        # Flatten label
+        flat_label = label.flatten()
 
 		# Sum up the number of pixels of each class and the total pixel
 		# counts for each label
-		class_count += np.bincount(flat_label, minlength=num_classes)
-		total += flat_label.size
+        class_count += np.bincount(flat_label, minlength=num_classes)
+        total += flat_label.size
 
 	# Compute propensity score and then the weights for each class
-	propensity_score = class_count / total
-	class_weights = 1 / (np.log(c + propensity_score))
+    propensity_score = class_count / total
+    class_weights = 1 / (np.log(c + propensity_score))
 
-	return class_weights
+    return class_weights
 
 def load_dataset(dataset):
     if(verbose):
@@ -96,9 +95,8 @@ def load_dataset(dataset):
     if class_weights is not None:
         class_weights = torch.from_numpy(class_weights).float().to(device)
         # Set the weight of the unlabeled class to 0
-        if args.ignore_unlabeled:
-            ignore_index = list(class_encoding).index(0)
-            class_weights[ignore_index] = 0
+        ignore_index = list(class_encoding).index(0)
+        class_weights[ignore_index] = 0
 
     print("Class weights:", class_weights)
 
@@ -233,6 +231,7 @@ if __name__ =="__main__":
     parser.add_argument('-wd','--weight_decay', default=2*np.exp(-4))
     parser.add_argument('-lrde','--lr_decay_epochs', default=50)
     parser.add_argument('-lrd','--lr_decay', default=0.995)
+    parser.add_argument('-val_every','--validate_every', default=10)
 
 
     args = parser.parse_args()
@@ -241,10 +240,11 @@ if __name__ =="__main__":
     batch_size = args.batch_size
 
     ### Add dataloader part here
-
+    
     loaders, w_class, class_encoding = load_dataset(dataset)  
     train_loader, val_loader, test_loader = loaders
     if args.mode.lower() in {'train', 'full'}:
+        print("Weight classes", w_class.shape)
         model = train(train_loader, val_loader, w_class, class_encoding)
         if args.mode.lower() == 'full':
             test(model, test_loader, w_class, class_encoding)

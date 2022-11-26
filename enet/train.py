@@ -47,8 +47,6 @@ class Train:
 
 			# Forward propagation
 			outputs = self.model(inputs)
-			print(labels[:,0].size())
-			print(outputs.size())
 			# Loss computation
 			loss = self.criterion(outputs, labels)
 
