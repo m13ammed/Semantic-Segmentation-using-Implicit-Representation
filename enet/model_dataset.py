@@ -1,7 +1,5 @@
 import torch.utils.data as data
-from utils.dataloader import DataLoader
 from utils.locations_constants import *
-from utils.scannet_scene import ScanNetScene
 from glob import glob
 import os
 from PIL import Image
