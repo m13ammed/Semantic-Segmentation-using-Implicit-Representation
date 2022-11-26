@@ -9,8 +9,8 @@ def remap_200_to_20(key):
             idx_20 = CLASS_LABELS_20.index(class_name)
             key_20 = VALID_CLASS_IDS_20[idx_20]
             if(key_20 in SCANNET_COLOR_MAP_20.keys()):
-                return SCANNET_COLOR_MAP_20[key_20]
-    return (0,0,0)
+                return key_20
+    return 0
 
 ### ScanNet Benchmark constants ###
 VALID_CLASS_IDS_20 = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39)

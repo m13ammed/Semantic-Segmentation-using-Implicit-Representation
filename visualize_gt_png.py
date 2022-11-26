@@ -19,7 +19,8 @@ def visualize_gt(scene_name:str="scene0000_00", pose_id: int =0, type="SCANNET_C
     elif(type=="SCANNET_COLOR_MAP_20"):
         for key in SCANNET_COLOR_MAP_200.keys():
             idx = gt_segm==key
-            img_out[idx] = remap_200_to_20(key)
+            key_20 = remap_200_to_20(key)
+            img_out[idx] = SCANNET_COLOR_MAP_20[key_20]
 
     im_out = Image.fromarray(img_out)
     im_out.show()
