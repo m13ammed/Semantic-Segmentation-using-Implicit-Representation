@@ -5,7 +5,6 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 sys.path.append(ROOT_DIR)
 
 import torch
-from utils.dataloader import DataLoader
 from utils.export_images import export_images
 #from utils.scannet_scene import ScanNetScene
 from dataloader.litdata import LitDataPefceptionScannet
