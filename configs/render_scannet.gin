@@ -1,48 +1,14 @@
-LitData.batch_sampler = "all_images"
-LitData.epoch_size = 25600 
-LitData.batch_size = 1
-LitData.chunk = 1000
-LitData.use_pixel_centers = True
+include "../configs/base.gin"
 
-LitDataPefceptionScannet.frame_skip = 1
-LitDataPefceptionScannet.max_frame = 10
+
+
+LitData.chunk = 100000
+
+LitDataPefceptionScannet.frame_skip = 20
+LitDataPefceptionScannet.max_frame = -1
 LitDataPefceptionScannet.max_image_dim = 640
-LitDataPefceptionScannet.cam_scale_factor = 1.0
 
 
-LitPlenoxel.reso = [[256, 256, 256]]
-LitPlenoxel.upsample_stride = 2
-LitPlenoxel.init_grid_with_pcd=False
-LitPlenoxel.background_nlayers = 0
-LitPlenoxel.background_reso = 512
-LitPlenoxel.lr_sigma = 3.0e+1
-LitPlenoxel.lr_sh = 1.0e-2
-LitPlenoxel.lr_sigma_delay_steps = 0
-LitPlenoxel.lr_fg_begin_step = 1000
-LitPlenoxel.density_thresh = 5.0
-LitPlenoxel.thresh_type = "sigma"
-LitPlenoxel.near_clip = 0.35
-LitPlenoxel.lambda_tv = 5.0e-5
-LitPlenoxel.lambda_tv_sh = 5.0e-3
-LitPlenoxel.lambda_tv_background_color = 1.0e-3
-LitPlenoxel.lambda_tv_background_color = 1.0e-3
-LitPlenoxel.lambda_beta = 1.0e-5
-LitPlenoxel.lambda_sparsity = 1.0e-10
-LitPlenoxel.background_brightness = 0.5
-LitPlenoxel.tv_early_only = 0
-LitPlenoxel.tv_decay = 0.5
-LitPlenoxel.quantize = True
-
-
-run.max_steps = 51200
-run.save_last_only = True
-run.dataset_name = "perfception_scannet"
-run.datadir = "/data/"
+run.datadir = "/data/" #location of perfception_scannet
+run.scannet_dir = None #set to None if the scannetfile are placed inside perfecption folders
 run.scene_name = "plenoxel_scannet_scene0000_00"
-run.logbase = "/workspace/ADL4DV/logs"
-run.log_every_n_steps = 100
-run.model_name = "plenoxel"
-run.seed = 0
-run.progressbar_refresh_rate = 100
-run.check_val_every_n_epoch = 999 # no validation 
-run.run_render = True

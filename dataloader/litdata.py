@@ -13,6 +13,13 @@ from dataloader.interface import LitData
 
 import gin
 
+def round( n ):
+    # Smaller multiple
+    a = (n // 10) * 10
+    # Larger multiple
+    b = a + 10
+    # Return of closest of two
+    return (b if n - a > b - n else a)
 def find_files(dir, exts):
     if os.path.isdir(dir):
         files_grabbed = []
@@ -27,32 +34,30 @@ def find_files(dir, exts):
 
 def load_plenoxel_scannet_data(
     datadir,
+    scene_name,
     cam_scale_factor=1.0,
     frame_skip=1,
     max_frame=1000,
     max_image_dim=800,
-):
+    scannet_dir = None):
+    
+    root_data_dir = datadir
+    datadir = os.path.join(datadir,scene_name)
     files = find_files(os.path.join(datadir, "pose"), exts=["*.txt"])
     assert len(files) > 0, f"{datadir} does not contain color images."
-    frame_ids = sorted([os.path.basename(f).rstrip(".txt") for f in files])
-
+    frame_ids = [int(os.path.basename(f).rstrip(".txt")) for f in files]
+    frame_ids = sorted(frame_ids)
     num_frames = len(frame_ids)
-    frames_in_use = (
-        np.array(
-            [np.floor(num_frames * (i / max_frame)) for i in range(max_frame)],
-            dtype=np.int,
-        )
-        if max_frame != -1
-        else np.arange(num_frames)
-    )
-    frames_in_use = np.unique(frames_in_use)
+    frames_in_use = np.arange(min(max_frame*frame_skip,len(frame_ids))) if max_frame != -1 else np.arange(num_frames)
+    perfception_prefix = 'plenoxel_scannet_'#_vh_clean_2.labels.ply       
     
     frame_ids = np.array(frame_ids)[frames_in_use][::frame_skip]
     print("frames in use:", frame_ids)
     # prepare
-    image = cv2.imread(os.path.join(datadir, "color", f"{frame_ids[0]}.jpg"))
+    #image = cv2.imread(os.path.join(datadir, "color", f"{frame_ids[0]}.jpg"))
     H, W = 968.0, 1296.0
     max_hw = max(H, W)
+    max_image_dim = round(max_image_dim)
     resize_scale = max_image_dim / max_hw
 
     # load poses
@@ -73,9 +78,15 @@ def load_plenoxel_scannet_data(
     print(f"loading intrinsic")
     intrinsic = np.loadtxt(os.path.join(datadir, "intrinsic", "intrinsic_color.txt"))
     intrinsic = intrinsic.astype(np.float32)
+    intrinsic_orig = intrinsic.copy()
     intrinsic *= resize_scale
     intrinsic[[2, 3], [2, 3]] = 1
+    intrinsic_orig[2,2]=0
+    intrinsic_orig[2,3]=1
+    intrinsic_orig[3,2]=1
+    intrinsic_orig[3,3]=0
 
+    
     # load trans_info
     trans_info = np.load(os.path.join(datadir, "trans_info.npz"))
 
@@ -84,28 +95,32 @@ def load_plenoxel_scannet_data(
 
     
     T = trans_info['T']
-    poses = T @ poses
+    render_poses = T @ poses
 
 
     ## zero mean
     pcd_mean = trans_info['pcd_mean'] #load
     #pcd_depth -= pcd_mean 
-    poses[:, :3, 3] -= pcd_mean
+    render_poses[:, :3, 3] -= pcd_mean
     ## zero mean [end]
 
     
     scene_scale = trans_info['scene_scale']
-    poses[:, :3, 3] *= scene_scale
+    render_poses[:, :3, 3] *= scene_scale
 
     #####
 
-    H, W = int(resize_scale*H), int(resize_scale*W) #480, 640
-    i_split = np.arange(len(poses))
-    i_test = np.unique(np.array([int(i * (len(poses) / 20)) for i in range(20)]))
+    H, W = int(round(resize_scale*H)), round(int(resize_scale*W)) #480, 640
+    i_split = np.arange(len(render_poses))
+    i_test = np.unique(np.array([int(i * (len(render_poses) / 20)) for i in range(20)]))
     i_train = np.array([i for i in i_split if not i in i_test])
     print(f">> train: {len(i_train)}, test: {len(i_test)}, total: {len(i_split)}")
-    render_poses = poses
-
+    
+    if scannet_dir is None:
+        scannet_dir = datadir
+        polygon_path = os.path.join(datadir,scene_name[len(perfception_prefix):]+'_vh_clean_2.labels.ply')
+    else:
+        polygon_path = os.path.join(scannet_dir,scene_name[len(perfception_prefix):],scene_name[len(perfception_prefix):]+ '_vh_clean_2.labels.ply')
     store_dict = {
         "poses": poses,
         "T": T,
@@ -114,6 +129,8 @@ def load_plenoxel_scannet_data(
         #"pcd_voxel": pcd_data,
         "frame_ids": frame_ids,
         "class_info": None,
+        "polygon": polygon_path,
+        "intrinsic_orig":intrinsic_orig
     }
     
     return (
@@ -122,6 +139,7 @@ def load_plenoxel_scannet_data(
         (int(H), int(W)),
         intrinsic,
         (i_train, i_test, i_test),
+        polygon_path,
         store_dict,
     )
 
@@ -139,6 +157,7 @@ class LitDataPefceptionScannet(LitData):
         max_frame: int = 1500,
         max_image_dim: int = 800,
         cam_scale_factor: float = 1.50,
+        scannet_dir = None
     ):
         super(LitDataPefceptionScannet, self).__init__(
             datadir=datadir,
@@ -153,9 +172,11 @@ class LitDataPefceptionScannet(LitData):
             (h, w),
             intrinsics,
             i_split,
+            polygon,
             trans_info,
         ) = load_plenoxel_scannet_data(
-            os.path.join(datadir, scene_name),
+            datadir,
+            scene_name = scene_name,
             cam_scale_factor=cam_scale_factor,
             frame_skip=frame_skip,
             max_frame=max_frame,
@@ -177,5 +198,7 @@ class LitDataPefceptionScannet(LitData):
         self.render_poses = render_poses
         self.trans_info = trans_info
         self.use_sphere_bound = False
+        self.polygon = polygon
+        self.intrinsic_orig = trans_info["intrinsic_orig"].reshape(-1, 4, 4).repeat(len(extrinsics), axis=0)
 
 

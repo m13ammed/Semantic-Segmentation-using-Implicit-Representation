@@ -19,6 +19,13 @@ def norm8b(x):
     x = (x - x.min()) / (x.max() - x.min())
     return to8b(x)
 
+def store_image_pose_num(dirpath, rgbs,idx):
+    for (rgb, i ) in zip(rgbs,idx):
+        imgname = f"image{str(i).zfill(6)}.jpg"
+        rgbimg = Image.fromarray(to8b(rgb.detach().cpu().numpy()))
+        imgpath = os.path.join(dirpath, imgname)
+        rgbimg.save(imgpath)
+
 
 def store_image(dirpath, rgbs):
     for (i, rgb) in enumerate(rgbs):

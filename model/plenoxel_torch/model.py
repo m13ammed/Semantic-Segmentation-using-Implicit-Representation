@@ -402,6 +402,15 @@ class LitPlenoxel(LitModel):
                 batch, batch_idx, cpu=True, prefix="bg", render_bg=True
             )
             ret.update(bg)
+        elif self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet":
+            fg = self.render_rays(
+                batch,
+                batch_idx,
+                cpu=True,
+                prefix="fg",
+                render_bg=False,
+            )
+            ret.update(fg)
         else:
             fgbg = self.render_rays(
                 batch,
@@ -428,7 +437,7 @@ class LitPlenoxel(LitModel):
         # instead of outputs.
         render_poses = self.trainer.datamodule.render_poses
         N_img = len(render_poses)
-
+        frame_ids = self.trainer.datamodule.trans_info['frame_ids']
         image_sizes = np.stack(
             [self.trainer.datamodule.image_sizes[0] for _ in range(N_img)]
         )
@@ -438,7 +447,8 @@ class LitPlenoxel(LitModel):
             )
 
         keys = ["bg/rgb"] if self.bkgd_only else ["fgbg/rgb", "fg/rgb", "mask"]
-
+        if self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet":
+            keys = ["fg/rgb"]
         rets = {}
         for key in keys:
             ret = self.alter_gather_cat(outputs[0], key, image_sizes)
@@ -460,19 +470,25 @@ class LitPlenoxel(LitModel):
             opt_list = ["bg"] if self.bkgd_only else ["fg", "fgbg"]
 
             os.makedirs(scene_path, exist_ok=True)
-            for opt in opt_list:
-                opt_path = os.path.join(scene_path, opt)
-                os.makedirs(opt_path, exist_ok=True)
-                store_util.store_image(opt_path, rets[f"{opt}/rgb"])
+            if self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet":
+                #opt_path = os.path.join(scene_path, 'fg')
+                #os.makedirs(opt_path, exist_ok=True)
+                store_util.store_image_pose_num(scene_path, rets[f"fg/rgb"], frame_ids)
+            else:
+                for opt in opt_list:
+                    opt_path = os.path.join(scene_path, opt)
+                    os.makedirs(opt_path, exist_ok=True)
+                    store_util.store_image(opt_path, rets[f"{opt}/rgb"])
 
             if "mask" in rets.keys():
                 mask_path = os.path.join(scene_path, "mask")
                 os.makedirs(mask_path, exist_ok=True)
                 store_util.store_mask(mask_path, rets["mask"])
 
-        if self.bkgd_only:
-            np.save(f"{scene_path}/poses.npy", self.trainer.datamodule.render_poses)
-            np.save(f"{scene_path}/intrinsics.npy", self.trainer.datamodule.intrinsics)
+        #if self.bkgd_only:
+        np.save(f"{scene_path}/perf_poses.npy", self.trainer.datamodule.render_poses)
+        np.save(f"{scene_path}/intrinsics.npy", self.trainer.datamodule.intrinsics)
+        np.save(f"{scene_path}/poses.npy", self.trainer.datamodule.extrinsics)
 
     def on_save_checkpoint(self, checkpoint) -> None:
 
