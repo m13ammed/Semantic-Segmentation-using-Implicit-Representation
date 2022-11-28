@@ -27,7 +27,8 @@ class SegmentationShader(ShaderBase):
         
         if rgb is not None:
             color = rgb[vert_idx]
-            color,_ = torch.mode(color, dim=3)/255.0
+            color,_ = torch.mode(color, dim=3)
+            color /= 255.0
             #color = color[...,0,:]
         else:
             color = rgb
