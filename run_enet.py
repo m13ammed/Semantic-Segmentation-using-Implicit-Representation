@@ -6,7 +6,7 @@ from enet.model_dataset import Perfception as dataset
 from PIL import Image
 from enet.test import Test
 from enet.train import Train
-from utils.scannet_constants import *
+from configs.scannet_constants import *
 import numpy as np
 import torch
 import torch.nn as nn
@@ -216,21 +216,21 @@ if __name__ =="__main__":
     )
 
     parser.add_argument('-v', '--verbose', action='store_true')
-    parser.add_argument('-f', '--frame_skip', default=20)
+    parser.add_argument('-f', '--frame_skip', default=0)
     parser.add_argument('-b', '--batch_size', default=64) 
     parser.add_argument('-w','--workers', default=1)
     parser.add_argument('-seg','--seg_classes', default="SCANNET_20")
     parser.add_argument('-m','--mode',default="train")
     parser.add_argument('-iul','--ignore_unlabeled',default=True)
     parser.add_argument('-res','--resume', default=False)
-    parser.add_argument('-lr','--learning_rate', default=1*np.exp(-3))
+    parser.add_argument('-lr','--learning_rate', default=5e-4)
     parser.add_argument('-ep','--epochs', default=200)
     parser.add_argument('-print','--print_step', default=25)
-    parser.add_argument('-b0','--beta0', default=0.7)
-    parser.add_argument('-b1','--beta1', default=0.7)
-    parser.add_argument('-wd','--weight_decay', default=2*np.exp(-4))
-    parser.add_argument('-lrde','--lr_decay_epochs', default=50)
-    parser.add_argument('-lrd','--lr_decay', default=0.995)
+    parser.add_argument('-b0','--beta0', default=0.9)
+    parser.add_argument('-b1','--beta1', default=0.999)
+    parser.add_argument('-wd','--weight_decay', default=2e-4)
+    parser.add_argument('-lrde','--lr_decay_epochs', default=100)
+    parser.add_argument('-lrd','--lr_decay', default=0.5)
     parser.add_argument('-val_every','--validate_every', default=10)
 
 

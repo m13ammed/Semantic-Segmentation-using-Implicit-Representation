@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 import torchvision.transforms as transforms
 import torch
-from utils.scannet_constants import SCANNET_COLOR_MAP_200, SCANNET_COLOR_MAP_20, remap_200_to_20
+from configs.scannet_constants import SCANNET_COLOR_MAP_200, SCANNET_COLOR_MAP_20, remap_200_to_20
 
 
 class Perfception(data.Dataset):
