@@ -1,9 +1,15 @@
-from utils.scannet_constants import SCANNET_COLOR_MAP_20, SCANNET_COLOR_MAP_200, remap_200_to_20
+import os, sys
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+sys.path.append(ROOT_DIR)
+
+
+from configs.scannet_constants import SCANNET_COLOR_MAP_20, SCANNET_COLOR_MAP_200, remap_200_to_20
 from utils.locations_constants import *
 from PIL import Image
-import os
 import numpy as np
-import sys, getopt
+import getopt
 
 
 def visualize_gt(scene_name:str="scene0000_00", pose_id: int =0, type="SCANNET_COLOR_MAP_20"):
