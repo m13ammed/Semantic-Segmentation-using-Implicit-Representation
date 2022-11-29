@@ -39,31 +39,43 @@ def load_plenoxel_scannet_data(
     frame_skip=1,
     max_frame=1000,
     max_image_dim=800,
-    scannet_dir = None):
+    scannet_dir = None,
+    square = False):
     
     root_data_dir = datadir
     datadir = os.path.join(datadir,scene_name)
-    files = find_files(os.path.join(datadir, "pose"), exts=["*.txt"])
-    assert len(files) > 0, f"{datadir} does not contain color images."
+    perfception_prefix = 'plenoxel_scannet_'#_vh_clean_2.labels.ply       
+    if scannet_dir is None:
+        data_path_scan = datadir
+        polygon_path = os.path.join(datadir,scene_name[len(perfception_prefix):]+'_vh_clean_2.labels.ply')
+    else:
+        polygon_path = os.path.join(scannet_dir,scene_name[len(perfception_prefix):],scene_name[len(perfception_prefix):]+ '_vh_clean_2.labels.ply')
+        data_path_scan = os.path.join(scannet_dir,scene_name[len(perfception_prefix):])
+
+    
+    files = find_files(os.path.join(data_path_scan, "pose"), exts=["*.txt"])
+    assert len(files) > 0, f"{data_path_scan} does not contain poses."
     frame_ids = [int(os.path.basename(f).rstrip(".txt")) for f in files]
     frame_ids = sorted(frame_ids)
     num_frames = len(frame_ids)
     frames_in_use = np.arange(min(max_frame*frame_skip,len(frame_ids))) if max_frame != -1 else np.arange(num_frames)
-    perfception_prefix = 'plenoxel_scannet_'#_vh_clean_2.labels.ply       
+    
     
     frame_ids = np.array(frame_ids)[frames_in_use][::frame_skip]
-    print("frames in use:", frame_ids)
+    print("frames in use:", frame_ids, frame_skip)
     # prepare
     #image = cv2.imread(os.path.join(datadir, "color", f"{frame_ids[0]}.jpg"))
     H, W = 968.0, 1296.0
     max_hw = max(H, W)
+    
     max_image_dim = round(max_image_dim)
-    resize_scale = max_image_dim / max_hw
+
+    resize_scale = [max_image_dim/H, max_image_dim/W] if square else max_image_dim / max_hw
 
     # load poses
     print(f"loading poses - {len(frame_ids)}")
     poses = np.stack(
-        [np.loadtxt(os.path.join(datadir, "pose", f"{f}.txt")) for f in frame_ids],
+        [np.loadtxt(os.path.join(data_path_scan, "pose", f"{f}.txt")) for f in frame_ids],
         axis=0,
     )
     poses = poses.astype(np.float32)
@@ -76,10 +88,14 @@ def load_plenoxel_scannet_data(
 
     # load intrinsics
     print(f"loading intrinsic")
-    intrinsic = np.loadtxt(os.path.join(datadir, "intrinsic", "intrinsic_color.txt"))
+    intrinsic = np.loadtxt(os.path.join(data_path_scan, "intrinsic", "intrinsic_color.txt"))
     intrinsic = intrinsic.astype(np.float32)
     intrinsic_orig = intrinsic.copy()
-    intrinsic *= resize_scale
+    if square:
+        intrinsic[0,:] *= resize_scale[1]
+        intrinsic[1,:] *= resize_scale[0]
+    else:
+        intrinsic *= resize_scale
     intrinsic[[2, 3], [2, 3]] = 1
     intrinsic_orig[2,2]=0
     intrinsic_orig[2,3]=1
@@ -109,18 +125,16 @@ def load_plenoxel_scannet_data(
     render_poses[:, :3, 3] *= scene_scale
 
     #####
+    if square:
 
-    H, W = int(round(resize_scale*H)), round(int(resize_scale*W)) #480, 640
+        H, W = (int(max_image_dim), int(max_image_dim))
+    else: 
+        H, W = int(round(resize_scale*H)), round(int(resize_scale*W)) #480, 640
     i_split = np.arange(len(render_poses))
     i_test = np.unique(np.array([int(i * (len(render_poses) / 20)) for i in range(20)]))
     i_train = np.array([i for i in i_split if not i in i_test])
     print(f">> train: {len(i_train)}, test: {len(i_test)}, total: {len(i_split)}")
     
-    if scannet_dir is None:
-        scannet_dir = datadir
-        polygon_path = os.path.join(datadir,scene_name[len(perfception_prefix):]+'_vh_clean_2.labels.ply')
-    else:
-        polygon_path = os.path.join(scannet_dir,scene_name[len(perfception_prefix):],scene_name[len(perfception_prefix):]+ '_vh_clean_2.labels.ply')
     store_dict = {
         "poses": poses,
         "T": T,
@@ -157,7 +171,8 @@ class LitDataPefceptionScannet(LitData):
         max_frame: int = 1500,
         max_image_dim: int = 800,
         cam_scale_factor: float = 1.50,
-        scannet_dir = None
+        scannet_dir = None,
+        square = False
     ):
         super(LitDataPefceptionScannet, self).__init__(
             datadir=datadir,
@@ -181,6 +196,8 @@ class LitDataPefceptionScannet(LitData):
             frame_skip=frame_skip,
             max_frame=max_frame,
             max_image_dim=max_image_dim,
+            scannet_dir=scannet_dir,
+            square= square
         )
         i_train, i_val, i_test = i_split
 
