@@ -7,7 +7,7 @@ import sys, getopt
 
 
 def visualize_gt(scene_name:str="scene0000_00", pose_id: int =0, type="SCANNET_COLOR_MAP_20"):
-    gt_folder = "label-filt"
+    gt_folder = "label"
     scannet_img_path = os.path.join(original_scannet_folder, scene_name,gt_folder, str(pose_id)+".png")
     im_scannet = Image.open(scannet_img_path).resize((640,480))
     gt_segm = np.array(im_scannet)
