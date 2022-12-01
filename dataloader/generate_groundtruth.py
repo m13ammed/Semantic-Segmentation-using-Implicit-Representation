@@ -64,8 +64,51 @@ def generate_groundtruth_render(
 
     # Render the  mesh from each viewing angle
     labels, target_images = renderer(meshes, cameras=cameras, labels=labels, rgb= rgb)
-    return cameras, target_images#[..., :3]
+    
+    return labels, target_images#[..., :3]
 
     
+def generate_groundtruth_render_batch_in(
+    image_out_size,
+    mesh ,
+    labels,
+    intrinsics,
+    poses,
+    device:torch.device = torch.device("cpu"),
+    rgb = None
+    
+):  
+    poses = poses.numpy()
+    R= poses[:,:3,:3].transpose(0,2,1)
+    R[:,[1,0]] *= (-1)
+    T = poses[:,:3,3:]
+    T = -R @ T
+    T = T.transpose(0,2,1)
+    T = np.squeeze(T,axis=1)
+    R = R.transpose(0,2,1)
+    cameras = PerspectiveCameras(
+        in_ndc=False,
+        image_size=([968.0, 1296.0],),
+        K=np.array(intrinsics[:R.shape[0]]),
+        device=device,
+        R=np.array(R),
+        T=np.array(T)
+    )
+
+    raster_settings = RasterizationSettings(
+        image_size=image_out_size, blur_radius=0.0, faces_per_pixel=1, bin_size=None
+    ) 
+    renderer = MeshRenderer(
+        rasterizer=MeshRasterizer(cameras=cameras, raster_settings=raster_settings),
+        shader=SegmentationShader(
+            device=device, cameras=cameras
+        ),
+    )
+    #meshes = mesh#.extend(poses.shape[0])
+
+    # Render the  mesh from each viewing angle
+    labels, target_images = renderer(mesh, cameras=cameras, labels=labels, rgb= rgb)
+    
+    return labels, target_images#[..., :3]
 
 

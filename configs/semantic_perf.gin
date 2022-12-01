@@ -1,0 +1,3 @@
+LitPerfception.perf_root = '/data/'
+LitPerfception.scannet_root = '/scannet_data/ScanNet/scans/'
+LitPerfception.debug = False

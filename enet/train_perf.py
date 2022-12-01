@@ -1,22 +1,22 @@
+from email.mime import image
 import os, sys
+from turtle import pos
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 sys.path.append(ROOT_DIR)
 
-import torch
 import time
 from dataloader.generate_groundtruth import generate_groundtruth_render_batch_in
-
-from PIL import Image
-
-class Test:
-	"""Tests the ``model`` on the specified test dataset using the
-	data loader, and loss criterion.
+class Train:
+	"""Performs the training of ``model`` given a training dataset data
+	loader, the optimizer, and the loss criterion.
 
 	Keyword arguments:
-	- model (``nn.Module``): the model instance to test.
+	- model (``nn.Module``): the model instance to train.
 	- data_loader (``Dataloader``): Provides single or multi-process
 	iterators over the dataset.
+	- optim (``Optimizer``): The optimization algorithm.
 	- criterion (``Optimizer``): The loss criterion.
 	- metric (```Metric``): An instance specifying the metric to return.
 	- device (``torch.device``): An object representing the device on which
@@ -24,30 +24,32 @@ class Test:
 
 	"""
 
-	def __init__(self, model, data_loader, criterion, metric, device):
+	def __init__(self, model, data_loader, optim, criterion, metric, device):
 		self.model = model
 		self.data_loader = data_loader
+		self.optim = optim
 		self.criterion = criterion
 		self.metric = metric
 		self.device = device
 
-	def run_epoch(self, iteration_loss=False):
-		"""Runs an epoch of validation.
+	def run_epoch(self, iteration_loss=0):
+		"""Runs an epoch of training.
 
 		Keyword arguments:
 		- iteration_loss (``bool``, optional): Prints loss at every step.
 
 		Returns:
-		- The epoch loss (float), and the values of the specified metrics
+		- The epoch loss (float).
 
 		"""
-		self.model.eval()
+		self.model.train()
 		epoch_loss = 0.0
 		self.metric.reset()
 		avgTime = 0.0
 		numTimeSteps = 0
 		for step, batch_data in enumerate(self.data_loader):
 			startTime = time.time()
+			# Get the inputs and labels
 			if len(batch_data)==6:
 				inputs, intrinsic, poses, mesh, labels, color = batch_data
 				color = color.to(self.device)
@@ -66,18 +68,20 @@ class Test:
 			mesh = mesh.cpu()
 			labels = labels.long()
 			inputs = inputs.to(self.device)
+			# Forward propagation
+			outputs = self.model(inputs)
+			# Loss computation
+			loss = self.criterion(outputs, labels)
 
-			with torch.no_grad():
-				# Forward propagation
-				outputs = self.model(inputs)
+			# Backpropagation
+			self.optim.zero_grad()
+			loss.backward()
+			self.optim.step()
 
-				# Loss computation
-				loss = self.criterion(outputs, labels)
-   
 			# Keep track of loss for current epoch
 			epoch_loss += loss.item()
 
-			# Keep track of evaluation the metric
+			# Keep track of the evaluation metric
 			self.metric.add(outputs.detach(), labels.detach())
 			endTime = time.time()
 			avgTime += (endTime - startTime)

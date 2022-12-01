@@ -18,13 +18,13 @@ class SegmentationShader(ShaderBase):
         pix_to_face = fragments.pix_to_face
         meshes_tensor = torch.cat(meshes.faces_list())
         vert_idx = meshes_tensor[pix_to_face].squeeze(3)
-        labels_20_k = labels[vert_idx].squeeze(4)
+        labels_20_k = torch.take(labels, vert_idx)#labels[vert_idx].squeeze(4)
         labels_20,_ = torch.mode(labels_20_k, dim=3) #majority vote
         #self.pallete = self.pallete.to(meshes.device)
         
         #index = torch.bucketize((meshes[...,0,-1]*255).type(torch.uint8), self.pallete)
         #labels = torch.take(self.keys, labels_20.type(torch.int64))
-        
+        labels_20 = self.keys[labels_20.long()]
         if rgb is not None:
             color = rgb[vert_idx]
             color,_ = torch.mode(color, dim=3)

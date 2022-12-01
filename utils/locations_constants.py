@@ -1,5 +1,5 @@
-perfception_scannet_folder = "../PeRFception-ScanNet"
-original_scannet_folder = "../ScanNet/scans"
+perfception_scannet_folder = "/data/"
+original_scannet_folder = "/scannet_data/ScanNet/scans/"
 plenoxel_prefix = ""
 img_dir = "render_model"
 semseg_poly_affix = "scene0000_00_vh_clean_2.labels.ply"

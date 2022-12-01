@@ -1,4 +1,4 @@
-include "../configs/base_seg.gin"
+include "/workspace/AD_efnet/configs/base_seg.gin"
 
 
 

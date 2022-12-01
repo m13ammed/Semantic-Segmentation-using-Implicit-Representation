@@ -26,7 +26,7 @@ def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, 
     scannet_scene = LitDataPefceptionScannet(scene_name=scannet_scene, frame_skip=frame_skip, datadir=datadir, scannet_dir=scannet_dir, num_tpus=0, accelerator=device, num_gpus=num_gpus)
     segmented_mesh,labels, rgb = load_mesh_labels(scannet_scene.polygon, device)
     for batch in range(len(scannet_scene.trans_info['frame_ids'])):
-        cameras, target_images = generate_groundtruth_render(
+        labels, target_images = generate_groundtruth_render(
             scannet_scene=scannet_scene,
             mesh=segmented_mesh, 
             labels=labels,
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     argv = sys.argv[1:]
     compressed=False
     show_only=False
-    ginc, ginb = ['../configs/render_scannet_seg_only.gin'], []
+    ginc, ginb = ['/workspace/AD_efnet/configs/render_scannet_seg_only.gin'], ['']
     scene_name = 'plenoxel_scannet_scene0000_00'
     frame_skip = 20
     try:
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
 
 
-    ginbs = []
+    #ginbs = []
     gin.parse_config_files_and_bindings(ginc,ginb)
 
 

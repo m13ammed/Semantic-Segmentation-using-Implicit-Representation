@@ -15,8 +15,8 @@ def save_checkpoint(model, optimizer, epoch, miou, args):
     file in ``args.save_dir`` named "``args.name``_args.txt".
 
     """
-    name = args.name
-    save_dir = args.save_dir
+    name = f'_{epoch}.ckpt'#args.name
+    save_dir = './'#args.save_dir
 
     assert os.path.isdir(
         save_dir), "The directory \"{0}\" doesn't exist.".format(save_dir)
@@ -67,11 +67,12 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
 
     # Create folder to save model and information
     model_path = os.path.join(folder_dir, filename)
+    model_path = '/workspace/AD_efnet/_109.ckpt'
     assert os.path.isfile(
         model_path), "The model file \"{0}\" doesn't exist.".format(filename)
 
     # Load the stored model parameters to the model instance
-    checkpoint = torch.load(model_path)
+    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     epoch = checkpoint['epoch']

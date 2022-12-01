@@ -132,7 +132,7 @@ def load_ply(
 
     return data.verts, faces, labels, rgb
 
-def load_mesh_labels(f, device) -> Tuple[Meshes, torch.Tensor]:
+def load_mesh_labels(f, device) -> Tuple[Meshes, torch.Tensor, torch.Tensor]:
     
     verts, faces, labels, rgb = load_ply(f)
     
