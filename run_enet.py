@@ -2,17 +2,18 @@ import argparse
 import torch.utils.data as data
 from enet.metric.iou import IoU
 from enet.model import ENet
-from enet.model_dataset import Perfception as dataset
+from enet.model_dataset import LitPerfception as dataset
+from enet.model_dataset import custom_collate
 from PIL import Image
 from enet.test import Test
-from enet.train import Train
+from enet.train_perf import Train
 from configs.scannet_constants import *
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
-from enet.utils import load_checkpoint, save_checkpoint
+from enet.enet_utils import load_checkpoint, save_checkpoint
 
 args = None
 verbose = False
@@ -62,15 +63,16 @@ def enet_weighing(dataloader, num_classes, c=1.02):
 def load_dataset(dataset):
     if(verbose):
         print("Loading Dataset")
-    
-    train_set = dataset(mode='train', seg_classes=args.seg_classes, frame_skip=args.frame_skip)
-    train_loader = data.DataLoader(train_set,batch_size=args.batch_size,shuffle=True, num_workers=args.workers)
+    import gin
+    #gin.parse_config_files_and_bindings(['configs/semantic_perf.gin'],[''])
+    train_set = dataset(mode='train')
+    train_loader = data.DataLoader(train_set,batch_size=args.batch_size,shuffle=False, num_workers=args.workers, collate_fn=custom_collate)
 
-    val_set = dataset(mode='val', seg_classes=args.seg_classes, frame_skip=args.frame_skip)
-    val_loader = data.DataLoader(val_set,batch_size=args.batch_size,shuffle=True, num_workers=args.workers)
+    val_set = dataset(mode='val')
+    val_loader = data.DataLoader(val_set,batch_size=args.batch_size,shuffle=False, num_workers=args.workers, collate_fn=custom_collate)
 
-    test_set = dataset(mode='test', seg_classes=args.seg_classes, frame_skip=args.frame_skip)
-    test_loader = data.DataLoader(test_set,batch_size=args.batch_size,shuffle=True, num_workers=args.workers)
+    test_set = dataset(mode='test')
+    test_loader = data.DataLoader(test_set,batch_size=args.batch_size,shuffle=False, num_workers=args.workers, collate_fn=custom_collate)
 
     class_encoding = SCANNET_COLOR_MAP_20
     if(args.seg_classes=="SCANNET_200"):
@@ -78,19 +80,21 @@ def load_dataset(dataset):
     
     num_classes = len(class_encoding)
 
+    class_encoding = SCANNET_COLOR_MAP_20_
     print("Number of classes to predict:", num_classes)
     print("Train dataset size:", len(train_set))
     print("Validation dataset size:", len(val_set))
 
-    if args.mode.lower() == 'test':
-        images, labels = next(iter(test_loader))
-    else:
-        images, labels = next(iter(train_loader))
-    print("Image size:", images.size())
-    print("Label size:", labels.size())
+    #if args.mode.lower() == 'test':
+    #    images, labels = next(iter(test_loader))
+    #else:
+    #    images, labels = next(iter(train_loader))
+    #print("Image size:", images.size())
+    #print("Label size:", labels.size())
     print("Class-color encoding:", class_encoding)
 
-    class_weights = enet_weighing(train_loader, num_classes)
+    class_weights = None
+    #class_weights = enet_weighing(train_loader, num_classes)
 
     if class_weights is not None:
         class_weights = torch.from_numpy(class_weights).float().to(device)
@@ -98,15 +102,17 @@ def load_dataset(dataset):
         ignore_index = list(class_encoding).index(0)
         class_weights[ignore_index] = 0
 
-    print("Class weights:", class_weights)
+    #print("Class weights:", class_weights)
 
     return (train_loader, val_loader,test_loader), class_weights, class_encoding
 
 
 def train(train_loader, val_loader, class_weights, class_encoding):
+    
     print("\nTraining...\n")
     num_classes = len(class_encoding)
     model = ENet(num_classes).to(device)
+    
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.Adam(
 		model.parameters(),
@@ -125,14 +131,17 @@ def train(train_loader, val_loader, class_weights, class_encoding):
         best_miou = 0
     train = Train(model, train_loader, optimizer, criterion, metric, device)
     val = Test(model, val_loader, criterion, metric, device)
+    best_miou = 0
     for epoch in range(start_epoch, args.epochs):
+        save_checkpoint(model, optimizer, epoch + 1, best_miou,
+									  args)
         print(">>>> [Epoch: {0:d}] Training".format(epoch))
         lr_updater.step()
         epoch_loss, (iou, miou) = train.run_epoch(args.print_step)
 
         print(">>>> [Epoch: {0:d}] Avg. loss: {1:.4f} | Mean IoU: {2:.4f}".
 			  format(epoch, epoch_loss, miou))
-
+        
         if (epoch + 1) % args.validate_every == 0 or epoch + 1 == args.epochs:
             print(">>>> [Epoch: {0:d}] Validation".format(epoch))
 
@@ -204,10 +213,10 @@ def test(model, test_loader, class_weights, class_encoding):
         print("{0}: {1:.4f}".format(key, class_iou))
 
 	# Show a batch of samples and labels
-    if args.imshow_batch:
-        print("A batch of predictions from the test set...")
-        images, _ = next(iter(test_loader))
-        predict(model, images, class_encoding)
+    #if args.imshow_batch:
+        #print("A batch of predictions from the test set...")
+    #images, _ = next(iter(test_loader))
+    #predict(model, images, class_encoding)
 
 if __name__ =="__main__":
     parser = argparse.ArgumentParser(
@@ -217,10 +226,10 @@ if __name__ =="__main__":
 
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-f', '--frame_skip', default=0)
-    parser.add_argument('-b', '--batch_size', default=64) 
+    parser.add_argument('-b', '--batch_size', default=4) 
     parser.add_argument('-w','--workers', default=1)
     parser.add_argument('-seg','--seg_classes', default="SCANNET_20")
-    parser.add_argument('-m','--mode',default="train")
+    parser.add_argument('-m','--mode',default="test")
     parser.add_argument('-iul','--ignore_unlabeled',default=True)
     parser.add_argument('-res','--resume', default=False)
     parser.add_argument('-lr','--learning_rate', default=5e-4)
@@ -231,7 +240,7 @@ if __name__ =="__main__":
     parser.add_argument('-wd','--weight_decay', default=2e-4)
     parser.add_argument('-lrde','--lr_decay_epochs', default=100)
     parser.add_argument('-lrd','--lr_decay', default=0.5)
-    parser.add_argument('-val_every','--validate_every', default=10)
+    parser.add_argument('-val_every','--validate_every', default=1000)
 
 
     args = parser.parse_args()
@@ -244,7 +253,7 @@ if __name__ =="__main__":
     loaders, w_class, class_encoding = load_dataset(dataset)  
     train_loader, val_loader, test_loader = loaders
     if args.mode.lower() in {'train', 'full'}:
-        print("Weight classes", w_class.shape)
+        #print("Weight classes", w_class.shape)
         model = train(train_loader, val_loader, w_class, class_encoding)
         if args.mode.lower() == 'full':
             test(model, test_loader, w_class, class_encoding)
@@ -252,7 +261,7 @@ if __name__ =="__main__":
         num_classes = len(class_encoding)
         model = ENet(num_classes).to(device)
         optimizer = optim.Adam(model.parameters())
-        model = load_checkpoint(model, optimizer, args.save_dir,
-									  args.name)[0]
+        model = load_checkpoint(model, optimizer, './',
+									  '_118.ckpt')[0]
         print(model)
         test(model, test_loader, w_class, class_encoding)
