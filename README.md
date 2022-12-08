@@ -1,7 +1,7 @@
 # Semantic-Segmentation-using-Implicit-Representation
 ## Getting Started
 Modify the locations of the `locations_constant.py` 
-
+..
 ## Useful commands
 ```
 python main.py --frame_skip <frame_skip> --compressed <True|False> --show_only <True|False>
