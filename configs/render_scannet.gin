@@ -1,4 +1,4 @@
-include "../configs/base.gin"
+include "/home/rozenberszki/karim/Semantic-Segmentation-using-Implicit-Representation/configs/base.gin"
 
 
 
@@ -9,5 +9,5 @@ LitDataPefceptionScannet.max_frame = -1
 LitDataPefceptionScannet.max_image_dim = 240 #640
 LitDataPefceptionScannet.square = True
 
-run.datadir = "/data/" #location of perfception_scannet
-run.scannet_dir = "/scannet_data/ScanNet/scans" #set to None if the scannetfile are placed inside perfecption folders
+run.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/" #location of perfception_scannet
+run.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans" #set to None if the scannetfile are placed inside perfecption folders

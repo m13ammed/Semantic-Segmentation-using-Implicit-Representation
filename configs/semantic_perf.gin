@@ -1,3 +1,3 @@
-LitPerfception.perf_root = '/data/'
-LitPerfception.scannet_root = '/scannet_data/ScanNet/scans/'
+run.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/" #location of perfception_scannet
+run.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans" #set to None if the scannetfile are placed inside perfecption folders
 LitPerfception.debug = False

@@ -22,11 +22,12 @@ def generate_groundtruth_render(
     
 ):
     image_out_size = scannet_scene.image_sizes[0].tolist()
-    print(image_out_size)#[480, 640]
+    # print(image_out_size)#[480, 640]
     if(compressed): image_out_size = [128,128]
     start_idx = batch_id*batch_size
     end_idx = start_idx + batch_size
-    if(end_idx>scannet_scene.extrinsics.shape[0]): end_idx = scannet_scene.extrinsics.shape[0]-1
+    if(end_idx>scannet_scene.extrinsics.shape[0]):
+        end_idx = scannet_scene.extrinsics.shape[0]
 
     poses = scannet_scene.extrinsics[start_idx:end_idx].copy()
     R= poses[:,:3,:3].transpose(0,2,1)
@@ -36,9 +37,11 @@ def generate_groundtruth_render(
     T = T.transpose(0,2,1)
     T = np.squeeze(T)
     R = R.transpose(0,2,1)
-    print(scannet_scene.trans_info['frame_ids'][start_idx:end_idx])
+    # print(scannet_scene.trans_info['frame_ids'][start_idx:end_idx])
     #intrinsics = torch.tensor(scannet_scene.intrinsics).expand(poses.shape[0], -1, -1)
     intrinsics = scannet_scene.intrinsic_orig[start_idx:end_idx].copy()
+    if(len(scannet_scene.trans_info['frame_ids'][start_idx:end_idx])==1):
+        T = np.expand_dims(T,axis=0)
     cameras = PerspectiveCameras(
         # focal_length=((-cam_params['fx'], -cam_params['fy']),),
         # principal_point=((cam_params['mx'], cam_params['my']),),
@@ -50,6 +53,9 @@ def generate_groundtruth_render(
         R=np.array(R),
         T=np.array(T)
     )
+    ### Bug where apparently for 1 items it creates a minimum of 3 cameras. 
+    if(len(scannet_scene.trans_info['frame_ids'][start_idx:end_idx])==1):
+        cameras = cameras[0]
 
     raster_settings = RasterizationSettings(
         image_size=image_out_size, blur_radius=0.0, faces_per_pixel=1, bin_size=None

@@ -13,19 +13,22 @@ from pytorch3d.io import IO
 from utils.ply_load import load_mesh_labels
 import sys, getopt
 import gin
+import glob
 
 @gin.configurable()
-def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, scannet_dir, batch_size):
+def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, scannet_dir, batch_size, colored = True):
     scannet_scene_name = scannet_scene
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
         torch.cuda.set_device(device)
     else: device = torch.device("cpu")
     num_gpus = 1 if torch.cuda.is_available() else 0
-    print(f"Generating Renders for scene {scannet_scene}")
+    print(f"Generating Renders for scene {scannet_scene} {scannet_dir}")
     scannet_scene = LitDataPefceptionScannet(scene_name=scannet_scene, frame_skip=frame_skip, datadir=datadir, scannet_dir=scannet_dir, num_tpus=0, accelerator=device, num_gpus=num_gpus)
     segmented_mesh,labels, rgb = load_mesh_labels(scannet_scene.polygon, device)
-    for batch in range(len(scannet_scene.trans_info['frame_ids'])):
+    n_batches = len(scannet_scene.trans_info['frame_ids'])//batch_size
+    if(len(scannet_scene.trans_info['frame_ids'])%batch_size!=0): n_batches+=1
+    for batch in range(n_batches):
         labels, target_images = generate_groundtruth_render(
             scannet_scene=scannet_scene,
             mesh=segmented_mesh, 
@@ -36,25 +39,36 @@ def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, 
             compressed=compressed,
             rgb = rgb
         )
-        export_images(target_images=target_images, show_only = show_only, batch=batch, batch_size=batch_size,frame_skip=frame_skip, scene_name=scannet_scene_name)
+        export_images(labels=labels,target_images=target_images, show_only = show_only, batch=batch, batch_size=batch_size,frame_skip=frame_skip, scene_name=scannet_scene_name, colored=colored)
+
+@gin.configurable()
+def generate_all_scenes(compressed, show_only,frame_skip, datadir, scannet_dir, colored=True):
+    list_dirs = sorted(glob.glob(scannet_dir+'/**', recursive=False))
+    # start_idx = list_dirs.index(scannet_dir+"/scene0540_02")
+    # list_dirs = list_dirs[start_idx:]
+    for dir in list_dirs:
+        scene_path = dir
+        scene_name = "plenoxel_scannet_"+dir.split("/")[-1]
+        render_seg_images(scannet_scene=scene_name, compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
 
 
 if __name__ == "__main__":
     argv = sys.argv[1:]
     compressed=False
     show_only=False
-    ginc, ginb = ['/workspace/AD_efnet/configs/render_scannet_seg_only.gin'], ['']
-    scene_name = 'plenoxel_scannet_scene0000_00'
-    frame_skip = 20
+    ginc, ginb = ['/home/rozenberszki/karim/Semantic-Segmentation-using-Implicit-Representation/configs/render_scannet_seg_only.gin'], ['']
+    scene_name = 'plenoxel_scannet_scene0001_00'
+    frame_skip = 1
+    col = True
     try:
-        opts, args = getopt.getopt(argv,"hf:c:s:",["frame_skip=","compressed=", "show_only="])
+        opts, args = getopt.getopt(argv,"hf:c:s:z",["frame_skip=","compressed=", "show_only=", "colored="])
     except getopt.GetoptError:
         print ('main.py -f <frame_skip> -c <true|false> -s <true|false>')
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-h':
-            print ('main.py -f <frame_skip> -c <true|false> -s <true|false> -n <scene_name_perf_format>')
+            print ('main.py -f <frame_skip> -c <true|false> -s <true|false> -n <scene_name_perf_format> -z <true|false>')
             sys.exit()
         elif opt in ("-f", "--frame_skip"):
             frame_skip = int(arg)
@@ -68,15 +82,17 @@ if __name__ == "__main__":
             ginc.append(arg)
         elif opt in ("-n", "--scene_name"):
             scene_name = scene_name
+        elif opt in ("-z", "--colored"):
+            col = bool(arg)
 
 
 
     #ginbs = []
     gin.parse_config_files_and_bindings(ginc,ginb)
-
-
     
-    render_seg_images(scannet_scene=scene_name, compressed=compressed, show_only=show_only,frame_skip=frame_skip)
+    generate_all_scenes(compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
+    
+    # render_seg_images(scannet_scene=scene_name, compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
 
 
 

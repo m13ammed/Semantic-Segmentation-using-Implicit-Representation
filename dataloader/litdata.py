@@ -52,8 +52,8 @@ def load_plenoxel_scannet_data(
         polygon_path = os.path.join(scannet_dir,scene_name[len(perfception_prefix):],scene_name[len(perfception_prefix):]+ '_vh_clean_2.labels.ply')
         data_path_scan = os.path.join(scannet_dir,scene_name[len(perfception_prefix):])
 
-    
-    files = find_files(os.path.join(data_path_scan, "pose"), exts=["*.txt"])
+    print(data_path_scan)
+    files = find_files(os.path.join(data_path_scan, "pose/"), exts=["*.txt"])
     assert len(files) > 0, f"{data_path_scan} does not contain poses."
     frame_ids = [int(os.path.basename(f).rstrip(".txt")) for f in files]
     frame_ids = sorted(frame_ids)
