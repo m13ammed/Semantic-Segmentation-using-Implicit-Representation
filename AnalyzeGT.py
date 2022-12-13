@@ -8,7 +8,7 @@ import argparse
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-g','--generate', action='store_true')
+    parser.add_argument('-g','--generate', action='store_false')
     args = parser.parse_args()
 
     save_needed = args.generate
@@ -16,12 +16,28 @@ if __name__=="__main__":
         gt_dir = "/home/rozenberszki/Downloads/ScanNet-gt-png/"
         list_dirs = sorted(glob.glob(gt_dir+'/**', recursive=False))
         class_dist = {}
-        class_dist[0] = 0
+        class_dist[0] = {
+            "sum":0,
+            "scenes":{
+
+            }
+        }
         # for i in range(21):
         #     if(i==0): continue
         #     class_dist[VALID_CLASS_IDS_20[i-1]]=0
         for key in VALID_CLASS_IDS_20:
-            class_dist[key]=0
+            class_dist[key]={
+                "sum":0,
+                "scenes":{
+
+                }
+            }
+
+        scene_def = {
+            "poses":[
+
+            ]
+        }
         
 
         to_save_img = np.zeros((480,640,3), dtype=np.uint8)
@@ -30,23 +46,46 @@ if __name__=="__main__":
             for image in sorted(glob.glob(os.path.join(gt_dir, scene, '**'), recursive=False)):
                 img = Image.open(image)
                 img = np.array(img)
+                scene_id = scene.split("/")[-1]
+                pose_id = image.split("/")[-1]
                 for key in range(21):
-                    if(key==0): class_dist[key]+=(img==key).sum();continue
+                    if(key==0): 
+                        class_dist[key]["sum"]+=(img==key).sum()
+                        if(scene_id not in class_dist[key]["scenes"]):
+                            class_dist[key]["scenes"][scene_id]={
+                              "sum":(img==key).sum(),
+                              "poses":{
+                                pose_id: (img==key).sum()
+                              }  
+                            }
+                        else:
+                            class_dist[key]["scenes"][scene_id]["sum"]+=(img==key).sum()
+                            class_dist[key]["scenes"][scene_id]["poses"][pose_id] = (img==key).sum()
+                        continue
                     new_key = VALID_CLASS_IDS_20[key-1] ## Key
-                    idx = img==key
-                    class_dist[new_key]+= (img==key).sum()
+                    # idx = img==key
+                    class_dist[new_key]["sum"]+= (img==key).sum()
+                    if(scene_id not in class_dist[new_key]["scenes"]):
+                        class_dist[new_key]["scenes"][scene_id]={
+                            "sum":(img==key).sum(),
+                            "poses":{
+                            pose_id: (img==key).sum()
+                            }  
+                        }
+                    else:
+                        class_dist[new_key]["scenes"][scene_id]["sum"]+=(img==key).sum()
+                        class_dist[new_key]["scenes"][scene_id]["poses"][pose_id] = (img==key).sum()
                     # to_save_img[idx] = SCANNET_COLOR_MAP_20[new_key]
 
         # pil_img = Image.fromarray(to_save_img)
         # pil_img.save("./test.png")
-        print(class_dist)
 
-        np.save("../class_dist.npy", class_dist)
+        np.save("../class_dist_advanced.npy", class_dist)
 
-    load = np.load("../class_dist.npy", allow_pickle='TRUE').item()
+    # # load = np.load("../class_dist_advanced.npy", allow_pickle='TRUE').item()
 
-    sum = 0
-    for key in load.keys():
-        sum+=load[key]
+    # sum = 0
+    # for key in load.keys():
+    #     sum+=load[key]
 
-    print("Sum", sum)
+    # print("Sum", sum)
