@@ -68,7 +68,7 @@ def load_plenoxel_scannet_data(
     H, W = 968.0, 1296.0
     max_hw = max(H, W)
     
-    max_image_dim = round(max_image_dim)
+    max_image_dim = round(max_image_dim) if not square else max_image_dim
 
     resize_scale = [max_image_dim/H, max_image_dim/W] if square else max_image_dim / max_hw
 

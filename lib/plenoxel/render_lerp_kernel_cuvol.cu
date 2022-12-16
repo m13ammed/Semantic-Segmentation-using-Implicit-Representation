@@ -35,6 +35,7 @@ __device__ __inline__ void trace_ray_cuvol(
         float* __restrict__ sphfunc_val,
         WarpReducef::TempStorage& __restrict__ temp_storage,
         float* __restrict__ out,
+        float* __restrict__ lane_color,
         bool* __restrict__ mask_out,
         float* __restrict__ out_log_transmit) {
     const uint32_t lane_colorgrp_id = lane_id % grid.basis_dim;
@@ -51,7 +52,7 @@ __device__ __inline__ void trace_ray_cuvol(
 
     float t = ray.tmin;
     float outv = 0.f;
-
+    float outsh = 0.f;
     float log_transmit = 0.f;
 
     while (t <= ray.tmax) {
@@ -86,22 +87,29 @@ __device__ __inline__ void trace_ray_cuvol(
         }
 
         if (sigma > opt.sigma_thresh) {
-            float lane_color = trilerp_cuvol_one(
+            float lane_color_local = trilerp_cuvol_one(
                             grid.links,
                             grid.sh_data,
                             grid.stride_x,
                             grid.size[2],
                             grid.sh_data_dim,
                             ray.l, ray.pos, lane_id);
-            lane_color *= sphfunc_val[lane_colorgrp_id]; // bank conflict
+            float sh = lane_color_local; //* sphfunc_val[lane_id];
+            lane_color_local *= sphfunc_val[lane_colorgrp_id]; // bank conflict
 
             const float pcnt = ray.world_step * sigma;
             const float weight = _EXP(log_transmit) * (1.f - _EXP(-pcnt));
             log_transmit -= pcnt;
-
+            //sh = sh*sphfunc_val[lane_colorgrp_id];
+            //float sh_total = WarpReducef(temp_storage).HeadSegmentedSum(
+            //                    sh, lane_id == 0
+            //            );
+            //float sh_total = sh;
             float lane_color_total = WarpReducef(temp_storage).HeadSegmentedSum(
-                lane_color, lane_colorgrp_id == 0
+                    lane_color_local, lane_colorgrp_id == 0
             );
+            //lane_color[lane_id] = sigma * sh_total;
+            outsh += weight * sh;//*fmaxf(sh_total + 0.055f, 0.f); //sh_total;  // Clamp to [+0, infty)
             outv += weight * fmaxf(lane_color_total + 0.5f, 0.f);  // Clamp to [+0, infty)
             if (_EXP(log_transmit) < opt.stop_thresh) {
                 log_transmit = -1e3f;
@@ -113,13 +121,21 @@ __device__ __inline__ void trace_ray_cuvol(
 
     if (grid.background_nlayers == 0) {
         outv += _EXP(log_transmit) * opt.background_brightness;
+        outsh += _EXP(log_transmit) * opt.background_brightness;
     }
+    lane_color[lane_id] = outsh;
     if (lane_colorgrp_id == 0) {
         if (out_log_transmit != nullptr) {
             *out_log_transmit = log_transmit;
         }
         out[lane_colorgrp] = outv;
+        
     }
+    
+
+
+    
+    //lane_color[lane_id] = sphfunc_val[lane_id];
     mask_out[lane_colorgrp] = (_EXP(log_transmit) < opt.mask_transmit_threshold);
 }
 
@@ -617,6 +633,7 @@ __global__ void render_ray_kernel(
         PackedRaysSpec rays,
         RenderOptions opt,
         torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> out,
+        torch::PackedTensorAccessor32<float, 2, torch::RestrictPtrTraits> lane_color,
         torch::PackedTensorAccessor32<bool, 2, torch::RestrictPtrTraits> mask_out,
         float* __restrict__ log_transmit_out = nullptr) {
     CUDA_GET_THREAD_ID(tid, int(rays.origins.size(0)) * WARP_SIZE);
@@ -648,6 +665,7 @@ __global__ void render_ray_kernel(
         sphfunc_val[ray_blk_id],
         temp_storage[ray_blk_id],
         out[ray_id].data(),
+        lane_color[ray_id].data(),
         mask_out[ray_id].data(),
         log_transmit_out == nullptr ? nullptr : log_transmit_out + ray_id);
 }
@@ -865,6 +883,7 @@ torch::Tensor volume_render_cuvol(
     const auto Q = rays.origins.size(0);
 
     torch::Tensor results = torch::empty_like(rays.origins);
+    torch::Tensor spherical_results = torch::empty_like(rays.origins);
     torch::Tensor masks = torch::empty({rays.origins.sizes()[0], 1});
 
     bool use_background = grid.background_links.defined() &&
@@ -881,6 +900,7 @@ torch::Tensor volume_render_cuvol(
                 grid, rays, opt,
                 // Output
                 results.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
+                spherical_results.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
                 masks.packed_accessor32<bool, 2, torch::RestrictPtrTraits>(),
                 use_background ? log_transmit.data_ptr<float>() : nullptr);
     }
@@ -971,6 +991,7 @@ void volume_render_cuvol_fused(
         bool render_fg,
         bool render_bg,
         torch::Tensor rgb_out,
+        torch::Tensor sh_out,
         torch::Tensor mask_out,
         GridOutputGrads& grads
     ) {
@@ -978,6 +999,7 @@ void volume_render_cuvol_fused(
     DEVICE_GUARD(grid.sh_data);
     CHECK_INPUT(rgb_gt);
     CHECK_INPUT(rgb_out);
+    CHECK_INPUT(sh_out);
     grid.check();
     rays.check();
     grads.check();
@@ -1001,6 +1023,7 @@ void volume_render_cuvol_fused(
             grid, rays, opt,
             // Output
             rgb_out.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
+            sh_out.packed_accessor32<float, 2, torch::RestrictPtrTraits>(),
             mask_out.packed_accessor32<bool, 2, torch::RestrictPtrTraits>(),
             need_log_transmit ? log_transmit.data_ptr<float>() : nullptr
         );

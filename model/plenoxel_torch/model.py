@@ -362,7 +362,7 @@ class LitPlenoxel(LitModel):
             )
 
         rays = dataclass.Rays(rays[:, 0].contiguous(), rays[:, 1].contiguous())
-        rgb, mask = self.model.volume_render_fused(
+        tup = self.model.volume_render_fused(
             rays,
             target,
             beta_loss=self.lambda_beta,
@@ -371,17 +371,24 @@ class LitPlenoxel(LitModel):
             render_fg=True,
             render_bg=render_bg,
         )
+        if len(tup) == 2:
+           rgb, mask = tup
+           sh = None
+        else:
+            rgb, mask, sh = tup
         # depth = self.model.volume_render_depth(
         #     rays,
         #     self.model.opt.sigma_thresh,
         # )
         if cpu:
             rgb = rgb.detach().cpu()
+            if sh is not None:
+                sh = sh.detach().cpu()
             # depth = depth.detach().cpu()
             target = target.detach().cpu()
             mask = mask.detach().cpu()
 
-        rgb_key, target_key, mask_key = "rgb", "target", "mask"
+        rgb_key, target_key, mask_key, sh_key = "rgb", "target", "mask", "sh"
         if prefix != "":
             rgb_key = f"{prefix}/{rgb_key}"
             target_key = f"{prefix}/{target_key}"
@@ -392,7 +399,8 @@ class LitPlenoxel(LitModel):
             ret[mask_key] = mask
         if "target" in batch.keys():
             ret[target_key] = target
-
+        if sh is not None:
+            ret[sh_key] = sh
         return ret
 
     def predict_step(self, batch, batch_idx):
@@ -406,7 +414,7 @@ class LitPlenoxel(LitModel):
             fg = self.render_rays(
                 batch,
                 batch_idx,
-                cpu=True,
+                cpu=False,
                 prefix="fg",
                 render_bg=False,
             )
@@ -431,8 +439,8 @@ class LitPlenoxel(LitModel):
             ret.update(fg)
         return ret
 
-
-    def on_predict_epoch_end(self, outputs):
+    @gin.configurable(module='LitPlenoxel')
+    def on_predict_epoch_end(self, outputs, out_sh = False, output_dir = None):
         # In the prediction step, be sure to use outputs[0]
         # instead of outputs.
         render_poses = self.trainer.datamodule.render_poses
@@ -449,6 +457,8 @@ class LitPlenoxel(LitModel):
         keys = ["bg/rgb"] if self.bkgd_only else ["fgbg/rgb", "fg/rgb", "mask"]
         if self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet":
             keys = ["fg/rgb"]
+            if out_sh:
+                keys.append("sh")
         rets = {}
         for key in keys:
             ret = self.alter_gather_cat(outputs[0], key, image_sizes)
@@ -473,12 +483,21 @@ class LitPlenoxel(LitModel):
             if self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet":
                 #opt_path = os.path.join(scene_path, 'fg')
                 #os.makedirs(opt_path, exist_ok=True)
-                store_util.store_image_pose_num(scene_path, rets[f"fg/rgb"], frame_ids)
+                if output_dir is not None:
+                    scene_path = f"{scene_name}"
+                    opt_path = os.path.join(output_dir,scene_path)
+                    os.makedirs(opt_path, exist_ok=True)
+                else:
+                    opt_path = scene_path
+                store_util.store_image_pose_num(opt_path, rets[f"fg/rgb"], frame_ids)
+                if out_sh:
+                    store_util.store_sh_pose_num(opt_path, rets[f"sh"], frame_ids)
             else:
                 for opt in opt_list:
                     opt_path = os.path.join(scene_path, opt)
                     os.makedirs(opt_path, exist_ok=True)
                     store_util.store_image(opt_path, rets[f"{opt}/rgb"])
+                    
 
             if "mask" in rets.keys():
                 mask_path = os.path.join(scene_path, "mask")

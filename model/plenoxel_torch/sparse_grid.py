@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import List, Optional, Tuple, Union
 from warnings import warn
-
+import gin
 import numpy as np
 import torch
 import torch.nn as nn
@@ -22,7 +22,7 @@ from model.plenoxel_torch.__global__ import (
 
 _C = _get_c_extension()
 
-
+@gin.configurable()
 class SparseGrid(nn.Module):
     def __init__(
         self,
@@ -325,7 +325,7 @@ class SparseGrid(nn.Module):
             self.opt._to_cpp(randomize=randomize),
             self.opt.backend,
         )
-
+    @gin.configurable(module='SparseGrid')
     def volume_render_fused(
         self,
         rays: dataclass.Rays,
@@ -335,6 +335,8 @@ class SparseGrid(nn.Module):
         sparsity_loss: float = 0.0,
         render_fg: bool = True,
         render_bg: bool = True,
+        step_size = None,
+        out_sh = False,
     ):
         """
         Standard volume rendering with fused MSE gradient generation,
@@ -360,6 +362,7 @@ class SparseGrid(nn.Module):
         assert rays.is_cuda
         grad_density, grad_sh, grad_basis, grad_bg = self._get_data_grads()
         rgb_out = torch.zeros_like(rgb_gt, dtype=torch.float32)
+        sh_out = torch.zeros((rgb_gt.shape[0], 27), dtype=torch.float32, device=rgb_out.device)  ## TODO debug dimensions and output
         mask_out = torch.ones_like(rgb_gt, dtype=torch.bool)
         basis_data: Optional[torch.Tensor] = None 
         self.sparse_grad_indexer = torch.zeros(
@@ -385,6 +388,8 @@ class SparseGrid(nn.Module):
 
         cu_fn = _C.__dict__[f"volume_render_{self.opt.backend}_fused"]
         #  with utils.Timing("actual_render"):
+        if step_size is not None:
+            self.opt.step_size = step_size
         cu_fn(
             self._to_cpp(replace_basis_data=basis_data),
             rays._to_cpp(),
@@ -397,6 +402,7 @@ class SparseGrid(nn.Module):
             render_fg,
             render_bg,
             rgb_out,
+            sh_out,
             mask_out,
             grad_holder,
         )
@@ -405,7 +411,10 @@ class SparseGrid(nn.Module):
             basis_data.backward(grad_basis)
 
         self.sparse_sh_grad_indexer = self.sparse_grad_indexer.clone()
-        return rgb_out, mask_out
+        if out_sh:
+            return rgb_out, mask_out, sh_out
+        else:
+            return rgb_out, mask_out
 
     def volume_render_depth(
         self,

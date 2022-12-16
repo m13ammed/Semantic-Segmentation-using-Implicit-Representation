@@ -21,7 +21,7 @@ void volume_render_cuvol_backward(SparseGridSpec &, RaysSpec &, RenderOptions &,
                                   Tensor, Tensor, GridOutputGrads &);
 void volume_render_cuvol_fused(
   SparseGridSpec &, RaysSpec &, RenderOptions &,
-  Tensor, float, float, bool, bool, Tensor, Tensor, GridOutputGrads &
+  Tensor, float, float, bool, bool, Tensor, Tensor, Tensor, GridOutputGrads &
 );
 // Expected termination (depth) rendering
 torch::Tensor volume_render_expected_term(SparseGridSpec &, RaysSpec &,
