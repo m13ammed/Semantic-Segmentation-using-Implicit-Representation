@@ -50,31 +50,35 @@ if __name__=="__main__":
                 pose_id = image.split("/")[-1]
                 for key in range(21):
                     if(key==0): 
+                        sum_pts = (img==key).sum()
                         class_dist[key]["sum"]+=(img==key).sum()
-                        if(scene_id not in class_dist[key]["scenes"]):
-                            class_dist[key]["scenes"][scene_id]={
-                              "sum":(img==key).sum(),
-                              "poses":{
-                                pose_id: (img==key).sum()
-                              }  
-                            }
-                        else:
-                            class_dist[key]["scenes"][scene_id]["sum"]+=(img==key).sum()
-                            class_dist[key]["scenes"][scene_id]["poses"][pose_id] = (img==key).sum()
+                        if(sum_pts > 0):
+                            if(scene_id not in class_dist[key]["scenes"]):
+                                class_dist[key]["scenes"][scene_id]={
+                                "sum":(img==key).sum(),
+                                "poses":{
+                                    pose_id: (img==key).sum()
+                                }  
+                                }
+                            else:
+                                class_dist[key]["scenes"][scene_id]["sum"]+=(img==key).sum()
+                                class_dist[key]["scenes"][scene_id]["poses"][pose_id] = (img==key).sum()
                         continue
                     new_key = VALID_CLASS_IDS_20[key-1] ## Key
                     # idx = img==key
-                    class_dist[new_key]["sum"]+= (img==key).sum()
-                    if(scene_id not in class_dist[new_key]["scenes"]):
-                        class_dist[new_key]["scenes"][scene_id]={
-                            "sum":(img==key).sum(),
-                            "poses":{
-                            pose_id: (img==key).sum()
-                            }  
-                        }
-                    else:
-                        class_dist[new_key]["scenes"][scene_id]["sum"]+=(img==key).sum()
-                        class_dist[new_key]["scenes"][scene_id]["poses"][pose_id] = (img==key).sum()
+                    sum_pts = (img==key).sum()
+                    class_dist[new_key]["sum"]+= sum_pts
+                    if(sum_pts > 0):
+                        if(scene_id not in class_dist[new_key]["scenes"]):
+                            class_dist[new_key]["scenes"][scene_id]={
+                                "sum":(img==key).sum(),
+                                "poses":{
+                                pose_id: (img==key).sum()
+                                }  
+                            }
+                        else:
+                            class_dist[new_key]["scenes"][scene_id]["sum"]+=(img==key).sum()
+                            class_dist[new_key]["scenes"][scene_id]["poses"][pose_id] = (img==key).sum()
                     # to_save_img[idx] = SCANNET_COLOR_MAP_20[new_key]
 
         # pil_img = Image.fromarray(to_save_img)
