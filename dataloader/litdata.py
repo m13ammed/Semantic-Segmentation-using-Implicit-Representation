@@ -37,7 +37,7 @@ def load_plenoxel_scannet_data(
     scene_name,
     cam_scale_factor=1.0,
     frame_skip=1,
-    max_frame=1000,
+    max_frame=-1,
     max_image_dim=800,
     scannet_dir = None,
     square = False):
@@ -168,7 +168,7 @@ class LitDataPefceptionScannet(LitData):
         num_tpus: int,
         # scannet specific arguments
         frame_skip: int = 1,
-        max_frame: int = 1500,
+        max_frame: int = -1,
         max_image_dim: int = 800,
         cam_scale_factor: float = 1.50,
         scannet_dir = None,

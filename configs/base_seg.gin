@@ -12,7 +12,7 @@ LitDataPefceptionScannet.cam_scale_factor = 1.0
 
 
 
-render_seg_images.datadir = "/data/"
-render_seg_images.scannet_dir = None
+render_seg_images.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet"
+render_seg_images.scannet_dir = "/home/rozenberszki/Downloads/ScanNet"
 render_seg_images.batch_size = 8
 render_seg_images.frame_skip = 20
