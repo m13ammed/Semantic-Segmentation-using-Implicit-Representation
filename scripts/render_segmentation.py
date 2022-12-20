@@ -1,4 +1,6 @@
 import os, sys
+import argparse
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -53,46 +55,93 @@ def generate_all_scenes(compressed, show_only,frame_skip, datadir, scannet_dir, 
 
 
 if __name__ == "__main__":
-    argv = sys.argv[1:]
-    compressed=False
-    show_only=False
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--ginc",
+        action="append",
+        help="gin config file",
+    )
+    parser.add_argument(
+        "--scene_name",
+        type=str,
+        default="plenoxel_scannet_scene0001_00",
+        help="scene name",
+    )
+    parser.add_argument(
+        "--ginb",
+        action="append",
+        help="gin bindings",
+    )
+
+    parser.add_argument(
+        "--compressed",
+        type=bool,
+        default=True,
+        help="Export in 124x124",
+    )
+
+    parser.add_argument(
+        "--show_only",
+        type=bool,
+        default=False,
+        help="Show image",
+    )
+
+    parser.add_argument(
+        "--colored",
+        type=bool,
+        default=False,
+        help="Colored or grayscale",
+    )
+
+    parser.add_argument(
+        "--frame_skip",
+        type=int,
+        default=1,
+        help="Number of frames to skip",
+    )
+
+    args = parser.parse_args()
+    # argv = sys.argv[1:]
+    compressed=args.compressed
+    show_only=args.show_only
     ginc, ginb = ['/home/rozenberszki/karim/Semantic-Segmentation-using-Implicit-Representation/configs/render_scannet_seg_only.gin'], ['']
-    scene_name = 'plenoxel_scannet_scene0001_00'
-    frame_skip = 1
-    col = True
-    try:
-        opts, args = getopt.getopt(argv,"hf:c:s:z",["frame_skip=","compressed=", "show_only=", "colored="])
-    except getopt.GetoptError:
-        print ('main.py -f <frame_skip> -c <true|false> -s <true|false>')
-        sys.exit(2)
+    scene_name = args.scene_name
+    frame_skip = args.frame_skip
+    col = args.colored
+    # try:
+    #     opts, args = getopt.getopt(argv,"hf:c:s:z:n",["frame_skip=","compressed=", "show_only=", "colored=","scene_name="])
+    # except getopt.GetoptError:
+    #     print ('main.py -f <frame_skip> -c <true|false> -s <true|false>')
+    #     sys.exit(2)
 
-    for opt, arg in opts:
-        if opt == '-h':
-            print ('main.py -f <frame_skip> -c <true|false> -s <true|false> -n <scene_name_perf_format> -z <true|false>')
-            sys.exit()
-        elif opt in ("-f", "--frame_skip"):
-            frame_skip = int(arg)
-        elif opt in ("-c", "--compressed"):
-            compressed = bool(arg)
-        elif opt in ("-s", "--show_only"):
-            show_only = bool(arg)
-        elif opt in ("-ginc"):
-            ginc.append(arg)
-        elif opt in ("-ginb"):
-            ginc.append(arg)
-        elif opt in ("-n", "--scene_name"):
-            scene_name = scene_name
-        elif opt in ("-z", "--colored"):
-            col = bool(arg)
-
+    # for opt, arg in opts:
+    #     if opt == '-h':
+    #         print ('main.py -f <frame_skip> -c <true|false> -s <true|false> -n <scene_name_perf_format> -z <true|false>')
+    #         sys.exit()
+    #     elif opt in ("-f", "--frame_skip"):
+    #         frame_skip = int(arg)
+    #     elif opt in ("-c", "--compressed"):
+    #         compressed = bool(arg)
+    #     elif opt in ("-s", "--show_only"):
+    #         show_only = bool(arg)
+    #     elif opt in ("-ginc"):
+    #         ginc.append(arg)
+    #     elif opt in ("-ginb"):
+    #         ginc.append(arg)
+    #     elif opt in ("-n", "--scene_name"):
+    #         scene_name = scene_name
+    #         print("SCENE", scene_name)
+    #     elif opt in ("-z", "--colored"):
+    #         col = bool(arg)
 
 
     #ginbs = []
     gin.parse_config_files_and_bindings(ginc,ginb)
     
-    generate_all_scenes(compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
+    # generate_all_scenes(compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
     
-    # render_seg_images(scannet_scene=scene_name, compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
+    render_seg_images(scannet_scene=scene_name, compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
 
 
 

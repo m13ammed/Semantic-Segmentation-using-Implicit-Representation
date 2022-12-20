@@ -23,7 +23,7 @@ def generate_groundtruth_render(
 ):
     image_out_size = scannet_scene.image_sizes[0].tolist()
     # print(image_out_size)#[480, 640]
-    if(compressed): image_out_size = [128,128]
+    if(compressed): image_out_size = [124,124]
     start_idx = batch_id*batch_size
     end_idx = start_idx + batch_size
     if(end_idx>scannet_scene.extrinsics.shape[0]):

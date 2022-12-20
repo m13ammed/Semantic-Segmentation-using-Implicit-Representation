@@ -10,7 +10,7 @@ LitDataPefceptionScannet.max_image_dim = 640
 
 render_seg_images.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/" #location of perfception_scannet
 render_seg_images.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans" #set to None if the scannetfile are placed inside perfecption folders
-render_seg_images.batch_size = 8
+render_seg_images.batch_size = 32
 render_seg_images.frame_skip = 20
 
 generate_all_scenes.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/"
