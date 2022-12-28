@@ -15,8 +15,11 @@ def save_checkpoint(model, optimizer, epoch, miou, args):
     file in ``args.save_dir`` named "``args.name``_args.txt".
 
     """
-    name = f'_{epoch}.ckpt'#args.name
-    save_dir = './'#args.save_dir
+    if args.save_many_checkpoints:
+        name = f'{epoch}.ckpt'#args.name
+    else: 
+        name = f'best.ckpt'
+    save_dir = args.save_dir#'./'#
 
     assert os.path.isdir(
         save_dir), "The directory \"{0}\" doesn't exist.".format(save_dir)
@@ -67,7 +70,6 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
 
     # Create folder to save model and information
     model_path = os.path.join(folder_dir, filename)
-    model_path = '/workspace/AD_efnet/_109.ckpt'
     assert os.path.isfile(
         model_path), "The model file \"{0}\" doesn't exist.".format(filename)
 

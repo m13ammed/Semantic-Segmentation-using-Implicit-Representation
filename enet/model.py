@@ -46,7 +46,7 @@ class InitialBlock(nn.Module):
         # the extension branch
         self.main_branch = nn.Conv2d(
             in_channels,
-            out_channels - 3,
+            out_channels - in_channels,
             kernel_size=3,
             stride=2,
             padding=1,
@@ -481,14 +481,15 @@ class ENet(nn.Module):
 
     """
 
-    def __init__(self, num_classes, encoder_relu=False, decoder_relu=True):
+    def __init__(self, num_classes, encoder_relu=False, decoder_relu=True, use_sh=False):
         super().__init__()
-
-        self.initial_block = InitialBlock(3, 16, relu=encoder_relu)
+        in_channel = 30 if use_sh else 3
+        channels = 64 if use_sh else 16
+        self.initial_block = InitialBlock(in_channel, channels, relu=encoder_relu)
 
         # Stage 1 - Encoder
         self.downsample1_0 = DownsamplingBottleneck(
-            16,
+            channels,
             64,
             return_indices=True,
             dropout_prob=0.01,
@@ -574,11 +575,11 @@ class ENet(nn.Module):
 
         # Stage 5 - Decoder
         self.upsample5_0 = UpsamplingBottleneck(
-            64, 16, dropout_prob=0.1, relu=decoder_relu)
+            64, channels, dropout_prob=0.1, relu=decoder_relu)
         self.regular5_1 = RegularBottleneck(
-            16, padding=1, dropout_prob=0.1, relu=decoder_relu)
+            channels, padding=1, dropout_prob=0.1, relu=decoder_relu)
         self.transposed_conv = nn.ConvTranspose2d(
-            16,
+            channels,
             num_classes,
             kernel_size=3,
             stride=2,

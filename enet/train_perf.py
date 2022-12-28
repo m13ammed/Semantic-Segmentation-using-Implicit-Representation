@@ -1,6 +1,6 @@
 from email.mime import image
 import os, sys
-from turtle import pos
+from turtle import begin_fill, pos
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -8,6 +8,8 @@ sys.path.append(ROOT_DIR)
 
 import time
 from dataloader.generate_groundtruth import generate_groundtruth_render_batch_in
+import torch
+import numpy as np
 class Train:
 	"""Performs the training of ``model`` given a training dataset data
 	loader, the optimizer, and the loss criterion.
@@ -24,15 +26,16 @@ class Train:
 
 	"""
 
-	def __init__(self, model, data_loader, optim, criterion, metric, device):
+	def __init__(self, model, data_loader, optim, criterion, metric, device, writer=None, class_encoding=None):
 		self.model = model
 		self.data_loader = data_loader
 		self.optim = optim
 		self.criterion = criterion
 		self.metric = metric
 		self.device = device
-
-	def run_epoch(self, iteration_loss=0):
+		self.writer = writer
+		self.class_encoding = class_encoding
+	def run_epoch(self, iteration_loss=0, epoch_num=0):
 		"""Runs an epoch of training.
 
 		Keyword arguments:
@@ -47,30 +50,18 @@ class Train:
 		self.metric.reset()
 		avgTime = 0.0
 		numTimeSteps = 0
+		first_time = time.time()
 		for step, batch_data in enumerate(self.data_loader):
 			startTime = time.time()
 			# Get the inputs and labels
-			if len(batch_data)==6:
-				inputs, intrinsic, poses, mesh, labels, color = batch_data
-				color = color.to(self.device)
-			else:
-				inputs, intrinsic, poses, mesh, labels = batch_data
 
-			
-			labels = labels.to(self.device)
-			#intrinsic = intrinsic.to(self.device)
-			#poses = poses.to(self.device)
-			mesh = mesh.to(self.device)
-			labels, _ = generate_groundtruth_render_batch_in(image_out_size=[inputs.shape[-2], inputs.shape[-1]], mesh=mesh,
-       				intrinsics = intrinsic, labels=labels, poses=poses, device=self.device)
-			intrinsic = intrinsic.cpu()
-			poses = poses.cpu()
-			mesh = mesh.cpu()
-			labels = labels.long()
-			inputs = inputs.to(self.device)
+			inputs, labels = self.preppare_input(batch_data)
 			# Forward propagation
 			outputs = self.model(inputs)
 			# Loss computation
+			#if labels.sum() == 0 :
+			#	print('found empty')
+			#	continue
 			loss = self.criterion(outputs, labels)
 
 			# Backpropagation
@@ -79,7 +70,8 @@ class Train:
 			self.optim.step()
 
 			# Keep track of loss for current epoch
-			epoch_loss += loss.item()
+			losss_item = loss.item()
+			epoch_loss += losss_item
 
 			# Keep track of the evaluation metric
 			self.metric.add(outputs.detach(), labels.detach())
@@ -93,4 +85,33 @@ class Train:
 				numTimeSteps = 0
 				avgTime = 0.
 
-		return epoch_loss / len(self.data_loader), self.metric.value()
+			self.writer.add_scalar('loss_step/training', losss_item, (epoch_num)*len(self.data_loader) + step ) 
+			self.writer.add_scalar('time_step/training', ((endTime - startTime)*1000), (epoch_num)*len(self.data_loader) + step)
+
+		iou, miou = self.metric.value()
+		avg_loss = epoch_loss / len(self.data_loader)
+		self.writer.add_scalar('loss_epoch/training',  avg_loss, (epoch_num+1))
+		self.writer.add_scalar('time_epoch/training', ((endTime - first_time)*1000), (epoch_num+1))
+		self.writer.add_scalar('miou_epoch/training', miou, (epoch_num+1))
+
+		
+		for key, iou_ in zip(self.class_encoding, np.nan_to_num(iou,nan=-1)):
+			self.writer.add_scalar('training_epoch_iou/'+key, float(iou_), (epoch_num+1))
+		
+		return avg_loss, (iou, miou)
+	def preppare_input(self, batch):
+		if self.data_loader.dataset.use_sh:
+			inputs =  torch.cat((batch['rgb'], batch['sh']), 1)
+		else:
+			inputs = batch['rgb']
+		if not self.data_loader.dataset.allow_gen_lables:
+			return inputs.to(self.device), batch['labels_2d'].long().to(self.device)
+		else:
+			intrinsic, poses= batch['intrinsic'], batch['poses']
+			mesh, labels, idx_to_ren = batch['mesh'], batch['labels'], batch['idx_to_ren']
+			labels_2d = batch['labels_2d'].to(self.device)
+			labelss, _ = generate_groundtruth_render_batch_in(image_out_size=[inputs.shape[-2], inputs.shape[-1]], mesh=mesh.to(self.device),
+       				intrinsics = intrinsic, labels=labels.to(self.device), poses=poses, device=self.device)
+			labels_2d[idx_to_ren] = labelss
+			return inputs.to(self.device), labels_2d.long()
+
