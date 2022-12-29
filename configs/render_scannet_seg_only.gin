@@ -5,10 +5,10 @@ include "/workspace/AD_efnet/configs/base_seg.gin"
 
 LitDataPefceptionScannet.frame_skip = 20
 LitDataPefceptionScannet.max_frame = -1
-LitDataPefceptionScannet.max_image_dim = 640
+LitDataPefceptionScannet.max_image_dim = 124
+LitDataPefceptionScannet.square = True
 
-
-render_seg_images.datadir = "/data/"
-render_seg_images.scannet_dir = None
+#render_seg_images.datadir = "/data/"
+#render_seg_images.scannet_dir = None
 render_seg_images.batch_size = 8
-render_seg_images.frame_skip = 20
+
