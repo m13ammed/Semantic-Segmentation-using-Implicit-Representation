@@ -12,6 +12,7 @@ LitPerfception.debug = False #outputs color for visualized semantic segmentation
 LitPerfception.gt_seg_root = '/home/rozenberszki/Downloads/ScanNet-gt-124/' #path for already computed semantic masks
 hparams_setup.use_sh = True
 hparams_setup.use_original_norm = False 
+hparams_setup.opt = True
 
 additional_setup.logs_dir='/home/rozenberszki/Downloads/logs/trials_for_debugging'
 additional_setup.exp_name='trial'
