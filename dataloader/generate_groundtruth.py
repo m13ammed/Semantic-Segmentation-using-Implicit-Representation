@@ -26,9 +26,11 @@ def generate_groundtruth_render(
     if(compressed): image_out_size = [128,128]
     start_idx = batch_id*batch_size
     end_idx = start_idx + batch_size
-    if(end_idx>scannet_scene.extrinsics.shape[0]): end_idx = scannet_scene.extrinsics.shape[0]-1
-
+    if(end_idx>=scannet_scene.extrinsics.shape[0]): end_idx = scannet_scene.extrinsics.shape[0]
     poses = scannet_scene.extrinsics[start_idx:end_idx].copy()
+    if(poses.shape[0]!= batch_size): batch_size = poses.shape[0]
+    if poses.ndim != 3:
+        poses = np.expand_dim(poses, 0)
     R= poses[:,:3,:3].transpose(0,2,1)
     R[:,[1,0]] *= (-1)
     T = poses[:,:3,3:]
@@ -36,9 +38,13 @@ def generate_groundtruth_render(
     T = T.transpose(0,2,1)
     T = np.squeeze(T)
     R = R.transpose(0,2,1)
-    print(scannet_scene.trans_info['frame_ids'][start_idx:end_idx])
+    print(scannet_scene.trans_info['frame_ids'][start_idx:end_idx], start_idx, end_idx)
     #intrinsics = torch.tensor(scannet_scene.intrinsics).expand(poses.shape[0], -1, -1)
     intrinsics = scannet_scene.intrinsic_orig[start_idx:end_idx].copy()
+    
+    if np.array(intrinsics[:R.shape[0]]).ndim !=3 or R.ndim !=3 or T.ndim !=2:
+        T = np.expand_dims(T, 0)
+        print(np.array(intrinsics[:R.shape[0]]).shape, R.shape, T.shape )
     cameras = PerspectiveCameras(
         # focal_length=((-cam_params['fx'], -cam_params['fy']),),
         # principal_point=((cam_params['mx'], cam_params['my']),),
@@ -63,9 +69,12 @@ def generate_groundtruth_render(
     meshes = mesh.extend(poses.shape[0])
 
     # Render the  mesh from each viewing angle
-    labels, target_images = renderer(meshes, cameras=cameras, labels=labels, rgb= rgb)
-    
-    return labels, target_images#[..., :3]
+    labels_, target_images = renderer(meshes, cameras=cameras, labels=labels, rgb= rgb)
+    meshes.to("cpu")
+    labels.to("cpu")
+    if rgb is not None:
+        rgb.to("cpu")
+    return labels_, target_images#[..., :3]
 
     
 def generate_groundtruth_render_batch_in(
