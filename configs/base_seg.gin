@@ -1,0 +1,18 @@
+LitData.batch_sampler = "all_images"
+LitData.epoch_size = 25600 
+LitData.batch_size = 2
+LitData.chunk = 100000
+LitData.use_pixel_centers = True
+
+LitDataPefceptionScannet.frame_skip = 20
+LitDataPefceptionScannet.max_frame = -1
+LitDataPefceptionScannet.max_image_dim = 640
+LitDataPefceptionScannet.cam_scale_factor = 1.0
+
+
+
+
+render_seg_images.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet"
+render_seg_images.scannet_dir = "/home/rozenberszki/Downloads/ScanNet"
+render_seg_images.batch_size = 8
+render_seg_images.frame_skip = 20

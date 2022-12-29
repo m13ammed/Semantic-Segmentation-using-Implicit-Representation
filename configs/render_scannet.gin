@@ -1,0 +1,19 @@
+include "/home/rozenberszki/karim/Semantic-Segmentation-using-Implicit-Representation/configs/base.gin"
+
+
+
+LitData.chunk = 100000
+
+LitDataPefceptionScannet.frame_skip = 1
+LitDataPefceptionScannet.max_frame = -1
+LitDataPefceptionScannet.max_image_dim = 124 #640
+LitDataPefceptionScannet.square = True
+
+run.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/" #location of perfception_scannet
+run.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans/"
+
+SparseGrid.volume_render_fused.step_size = 0.05
+SparseGrid.volume_render_fused.out_sh = True
+
+LitPlenoxel.on_predict_epoch_end.out_sh = True
+LitPlenoxel.on_predict_epoch_end.output_dir = None #none is the current directory otherwise use string as save dir
