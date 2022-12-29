@@ -84,10 +84,10 @@ def load_dataset(dataset):
         print("Loading Dataset")
     import gin
     #gin.parse_config_files_and_bindings(['configs/semantic_perf.gin'],[''])
-    train_set = dataset(mode='train', use_sh = args.use_sh, allow_gen_lables = args.allow_gen_lables, use_original_norm=args.use_original_norm)
+    train_set = dataset(mode='train', use_sh = args.use_sh, allow_gen_lables = args.allow_gen_lables, use_original_norm=args.use_original_norm, opt = args.opt)
     train_loader = data.DataLoader(train_set,batch_size=args.batch_size,shuffle=False, num_workers=args.workers, collate_fn=custom_collate)
 
-    val_set = dataset(mode='val', use_sh = args.use_sh, allow_gen_lables = False, use_original_norm=args.use_original_norm)
+    val_set = dataset(mode='val', use_sh = args.use_sh, allow_gen_lables = False, use_original_norm=args.use_original_norm, opt = args.opt)
     val_loader = data.DataLoader(val_set,batch_size=args.batch_size,shuffle=False, num_workers=args.workers, collate_fn=custom_collate)
 
     test_set = dataset(mode='test', use_sh = args.use_sh, allow_gen_lables = False, use_original_norm=args.use_original_norm)
@@ -240,7 +240,7 @@ def test(model, test_loader, class_weights, class_encoding):
 @gin.configurable()
 def hparams_setup( batch_size=4, learning_rate=5e-3, epochs=200, beta0=0.9, beta1=0.999, weight_decay=2e-4,
                   lr_decay_epochs=100, lr_decay=0.5, validate_every=1, use_sh = False, allow_gen_lables = False,
-                  use_original_norm=False):
+                  use_original_norm=False, opt = False):
     params  = {
         "batch_size":batch_size,
         "learning_rate":learning_rate,
@@ -253,7 +253,8 @@ def hparams_setup( batch_size=4, learning_rate=5e-3, epochs=200, beta0=0.9, beta
         'validate_every':validate_every,
         'use_sh':use_sh,
         'allow_gen_lables':allow_gen_lables,
-        'use_original_norm': use_original_norm
+        'use_original_norm': use_original_norm,
+        'opt': opt
     }
     import random
     for key in params.keys():
