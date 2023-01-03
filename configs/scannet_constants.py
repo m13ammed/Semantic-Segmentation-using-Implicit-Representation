@@ -1,9 +1,81 @@
-### ScanNet Benchmark constants ###
-VALID_CLASS_IDS_20 = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39)
+from collections import OrderedDict
+from numpy import array
 
+def remap_200_to_20(key):
+    if key in VALID_CLASS_IDS_200:
+        idx = VALID_CLASS_IDS_200.index(key)
+        class_name = CLASS_LABELS_200[idx]
+        if(class_name in CLASS_LABELS_20):
+            idx_20 = CLASS_LABELS_20.index(class_name)
+            key_20 = VALID_CLASS_IDS_20[idx_20]
+            if(key_20 in SCANNET_COLOR_MAP_20.keys()):
+                return key_20
+    return 0
+
+
+### ScanNet Benchmark constants ###
+VALID_CLASS_IDS_20 = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39) 
+NON_VALID = (13, 15, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 29, 30, 31, 32, 35, 37, 38, 40)
+#Map_to_20 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,0, 14, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0, 28, 0, 0, 0, 0, 33, 34, 0, 36, 0, 39, 0]
+VALID_CLASS_IDS_20_ = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 24, 28, 33, 34, 36, 39) 
+Map_to_20= [0 for i in range(0,41)]
+
+for j,i in enumerate(VALID_CLASS_IDS_20):
+    Map_to_20[i] = j+1
 CLASS_LABELS_20 = ('wall', 'floor', 'cabinet', 'bed', 'chair', 'sofa', 'table', 'door', 'window',
                    'bookshelf', 'picture', 'counter', 'desk', 'curtain', 'refrigerator',
                    'shower curtain', 'toilet', 'sink', 'bathtub', 'otherfurniture')
+CLASS_LABELS_20_ = ('unannotated','wall', 'floor', 'cabinet', 'bed', 'chair', 'sofa', 'table', 'door', 'window',
+                   'bookshelf', 'picture', 'counter', 'desk', 'curtain', 'refrigerator',
+                   'shower curtain', 'toilet', 'sink', 'bathtub', 'otherfurniture')
+
+SCANNET_COLOR_MAP_20_ = {
+    0: (0., 0., 0.),
+    1: (174., 199., 232.),
+    2: (152., 223., 138.),
+    3: (31., 119., 180.),
+    4: (255., 187., 120.),
+    5: (188., 189., 34.),
+    6: (140., 86., 75.),
+    7: (255., 152., 150.),
+    8: (214., 39., 40.),
+    9: (197., 176., 213.),
+    10: (148., 103., 189.),
+    11: (196., 156., 148.),
+    12: (23., 190., 207.),
+    14: (247., 182., 210.),
+    15: (66., 188., 102.),
+    16: (219., 219., 141.),
+    17: (140., 57., 197.),
+    18: (202., 185., 52.),
+    19: (51., 176., 203.),
+    20: (200., 54., 131.),
+    21: (92., 193., 61.),
+}
+
+SCANNET_COLOR_MAP_20_array = array([
+    [0., 0., 0.],
+    [174., 199., 232.],
+    [152., 223., 138.],
+    [31., 119., 180.],
+    [255., 187., 120.],
+    [188., 189., 34.],
+    [140., 86., 75.],
+    [255., 152., 150.],
+    [214., 39., 40.],
+    [197., 176., 213.],
+    [148., 103., 189.],
+    [196., 156., 148.],
+    [23., 190., 207.],
+    [247., 182., 210.],
+    [66., 188., 102.],
+    [219., 219., 141.],
+    [140., 57., 197.],
+    [202., 185., 52.],
+    [51., 176., 203.],
+    [200., 54., 131.],
+    [92., 193., 61.]
+])
 
 SCANNET_COLOR_MAP_20 = {
     0: (0., 0., 0.),

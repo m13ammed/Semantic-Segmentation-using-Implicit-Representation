@@ -1,20 +1,32 @@
-from utils.scannet_constants import SCANNET_COLOR_MAP_200
+import os, sys
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+sys.path.append(ROOT_DIR)
+
+
+from configs.scannet_constants import SCANNET_COLOR_MAP_20, SCANNET_COLOR_MAP_200, remap_200_to_20
 from utils.locations_constants import *
 from PIL import Image
-import os
 import numpy as np
-import sys, getopt
+import getopt
 
 
-def visualize_gt(scene_name:str="scene0000_00", pose_id: int =0):
-    gt_folder = "label-filt"
+def visualize_gt(scene_name:str="scene0000_00", pose_id: int =0, type="SCANNET_COLOR_MAP_20"):
+    gt_folder = "label"
     scannet_img_path = os.path.join(original_scannet_folder, scene_name,gt_folder, str(pose_id)+".png")
     im_scannet = Image.open(scannet_img_path).resize((640,480))
     gt_segm = np.array(im_scannet)
     img_out = np.zeros((480,640,3), dtype=np.uint8)
-    for key in SCANNET_COLOR_MAP_200.keys():
-        idx = gt_segm==key
-        img_out[idx] = SCANNET_COLOR_MAP_200[key]
+    if(type=="SCANNET_COLOR_MAP_200"):
+        for key in SCANNET_COLOR_MAP_200.keys():
+            idx = gt_segm==key
+            img_out[idx] = SCANNET_COLOR_MAP_200[key]
+    elif(type=="SCANNET_COLOR_MAP_20"):
+        for key in SCANNET_COLOR_MAP_200.keys():
+            idx = gt_segm==key
+            key_20 = remap_200_to_20(key)
+            img_out[idx] = SCANNET_COLOR_MAP_20[key_20]
 
     im_out = Image.fromarray(img_out)
     im_out.show()
