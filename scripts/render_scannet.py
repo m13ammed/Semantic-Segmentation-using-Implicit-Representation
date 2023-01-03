@@ -39,6 +39,7 @@ def str2bool(v):
 @gin.configurable()
 def run(
     datadir: Optional[str] = None,
+    scannet_dir: Optional[str] = None,
     logbase: Optional[str] = None,
     scene_name: Optional[str] = None,
     model_name: Optional[str] = None,
@@ -91,10 +92,11 @@ def run(
         accelerator=accelerator,
         num_gpus=num_gpus,
         num_tpus=num_tpus,
+        scannet_dir=scannet_dir
     )
     model = LitPlenoxel()
-    os.makedirs("/log/",exist_ok=True)
-    model.logdir = "/log/"
+    os.makedirs("/home/rozenberszki/Downloads/logs/",exist_ok=True)
+    model.logdir = "/home/rozenberszki/Downloads/logs/"
 
 
     if run_render:

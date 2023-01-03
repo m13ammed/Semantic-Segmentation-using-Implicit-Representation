@@ -15,10 +15,9 @@ from pytorch3d.io import IO
 from utils.ply_load import load_mesh_labels
 import sys, getopt
 import gin
-import glob
-
+import argparse
 @gin.configurable()
-def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, scannet_dir, batch_size, colored = True):
+def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, scannet_dir, batch_size, colored):
     scannet_scene_name = scannet_scene
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
@@ -41,38 +40,18 @@ def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, 
             compressed=compressed,
             rgb = rgb
         )
-        export_images(labels=labels_,target_images=target_images, show_only = show_only, batch=batch, batch_size=batch_size,frame_skip=frame_skip, scene_name=scannet_scene_name, colored=colored)
-
-@gin.configurable()
-def generate_all_scenes(compressed, show_only,frame_skip, datadir, scannet_dir, colored=True):
-    list_dirs = sorted(glob.glob(scannet_dir+'/**', recursive=False))
-    # start_idx = list_dirs.index(scannet_dir+"/scene0540_02")
-    # list_dirs = list_dirs[start_idx:]
-    for dir in list_dirs:
-        scene_path = dir
-        scene_name = "plenoxel_scannet_"+dir.split("/")[-1]
-        render_seg_images(scannet_scene=scene_name, compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
+        start_idx = batch*batch_size
+        end_idx = start_idx + batch_size
+        if (batch+1) == n_batches:
+            frames = scannet_scene.trans_info['frame_ids'][start_idx:]
+        else:
+            frames = scannet_scene.trans_info['frame_ids'][start_idx:end_idx]
+        export_images(labels=labels_,target_images=target_images, show_only = show_only, scene_name=scannet_scene_name, frame_ids = frames, colored = colored)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--ginc",
-        action="append",
-        help="gin config file",
-    )
-    parser.add_argument(
-        "--scene_name",
-        type=str,
-        default="plenoxel_scannet_scene0001_00",
-        help="scene name",
-    )
-    parser.add_argument(
-        "--ginb",
-        action="append",
-        help="gin bindings",
-    )
-
+    argv = sys.argv[1:]
+    parser = argparse.ArgumentParser()    # argv = sys.argv[1:]
     parser.add_argument(
         "--compressed",
         type=bool,
@@ -141,7 +120,7 @@ if __name__ == "__main__":
     
     # generate_all_scenes(compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
     
-    render_seg_images(scannet_scene=scene_name, compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored=col)
+    render_seg_images(scannet_scene=scene_name, compressed=compressed, show_only=show_only,frame_skip=frame_skip, colored = col)
 
 
 

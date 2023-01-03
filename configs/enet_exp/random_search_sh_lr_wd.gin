@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-run.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/" #location of perfception_scannet
-run.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans" #set to None if the scannetfile are placed inside perfecption folders
-LitPerfception.debug = False
-=======
 LitPerfception.perf_root = '/home/rozenberszki/Downloads/perf_render/' #path to rgb images
 LitPerfception.scannet_root = '/home/rozenberszki/Downloads/ScanNet/scans' #path to scannet (where label.ply could be found)
 
@@ -35,4 +30,3 @@ hparams_setup.lr_decay=0.5
 hparams_setup.beta0=0.9
 hparams_setup.beta1=0.999
 
->>>>>>> main

@@ -2,6 +2,12 @@
 __pycache__/
 out/
 __pycache__
+<<<<<<< HEAD
 .eggs/
 build/
 *.egg-info
+=======
+build/
+.eggs/
+plenoxel.egg-info/
+>>>>>>> main

@@ -25,6 +25,12 @@ def store_image_pose_num(dirpath, rgbs,idx):
         rgbimg = Image.fromarray(to8b(rgb.detach().cpu().numpy()))
         imgpath = os.path.join(dirpath, imgname)
         rgbimg.save(imgpath)
+        
+def store_sh_pose_num(dirpath, shs,idx):
+    for (sh, i ) in zip(shs,idx):
+        shname = f"image{str(i).zfill(6)}"
+        shpath = os.path.join(dirpath, shname)
+        np.savez(shpath, sh.detach().cpu().numpy())
 
 
 def store_image(dirpath, rgbs):
