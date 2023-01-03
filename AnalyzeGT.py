@@ -13,7 +13,7 @@ if __name__=="__main__":
 
     save_needed = args.generate
     if(save_needed):
-        gt_dir = "/home/rozenberszki/Downloads/ScanNet-gt-png/"
+        gt_dir = "/home/rozenberszki/Downloads/ScanNet-gt-124/"
         list_dirs = sorted(glob.glob(gt_dir+'/**', recursive=False))
         class_dist = {}
         class_dist[0] = {
@@ -40,12 +40,11 @@ if __name__=="__main__":
         }
         
 
-        to_save_img = np.zeros((480,640,3), dtype=np.uint8)
         for tqdm_idx in tqdm(range(len(list_dirs))):
             scene = list_dirs[tqdm_idx]
             for image in sorted(glob.glob(os.path.join(gt_dir, scene, '**'), recursive=False)):
-                img = Image.open(image)
-                img = np.array(img)
+                if(image.endswith(".png")): continue
+                img = np.load(image, allow_pickle=True)
                 scene_id = scene.split("/")[-1]
                 pose_id = image.split("/")[-1]
                 for key in range(21):

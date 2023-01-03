@@ -79,5 +79,6 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
     optimizer.load_state_dict(checkpoint['optimizer'])
     epoch = checkpoint['epoch']
     miou = checkpoint['miou']
+    print(checkpoint['state_dict'])
 
     return model, optimizer, epoch, miou

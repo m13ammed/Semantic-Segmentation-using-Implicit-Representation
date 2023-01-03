@@ -3,6 +3,7 @@ from distutils.log import debug
 from unittest import result
 import torch.utils.data as data
 from enet.metric.iou import IoU
+from enet.early_stopper import EarlyStopper
 from enet.model import ENet
 from enet.model_dataset import LitPerfception as dataset
 from enet.model_dataset import custom_collate
@@ -140,6 +141,8 @@ def train(train_loader, val_loader, class_weights, class_encoding, writer):
     train = Train(model, train_loader, optimizer, criterion, metric, device, writer, class_encoding=CLASS_LABELS_20_)
     val = Test(model, val_loader, criterion, metric, device, writer, class_encoding=CLASS_LABELS_20_, log_image_every=args.log_image_every)
     best_miou = 0
+
+    early_stopper = EarlyStopper(patience=5, min_delta=3)
     for epoch in range(start_epoch, args.epochs):
         save_checkpoint(model, optimizer, epoch + 1, best_miou,
 									  args)
@@ -170,6 +173,17 @@ def train(train_loader, val_loader, class_weights, class_encoding, writer):
                 best_iou = iou
                 save_checkpoint(model, optimizer, epoch + 1, best_miou,
 									  args)
+            
+            if(early_stopper.early_stop(loss)):
+                print("Early stopping")
+                save_checkpoint(model, optimizer, epoch + 1, miou,
+									  args)
+                results = {"best_moiu": best_miou}
+                for key, iou in zip(CLASS_LABELS_20_, np.nan_to_num(best_iou,nan=-1)):
+                    results.update({"iou_at_best_moiu/"+key:float(iou)})
+                writer2 = SummaryWriter(log_dir=args.logs_dir)
+                writer2.add_hparams(hparams, results, run_name = args.exp_name)
+                break
 
     results = {"best_moiu": best_miou}
     for key, iou in zip(CLASS_LABELS_20_, np.nan_to_num(best_iou,nan=-1)):
