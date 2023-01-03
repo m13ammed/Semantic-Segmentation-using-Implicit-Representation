@@ -16,7 +16,7 @@ import torchvision.transforms as transforms
 import torch
 from configs.scannet_constants import SCANNET_COLOR_MAP_200, SCANNET_COLOR_MAP_20, remap_200_to_20
 from pytorch3d.structures import join_meshes_as_batch
-from configs.train import train_scenes, train_scenes_opt
+from configs.train import train_scenes, train_scenes_opt, train_scenes_full
 from configs.val import val_scenes, val_scenes_opt
 from configs.test import test_scenes
 from utils.ply_load import load_mesh_labels
