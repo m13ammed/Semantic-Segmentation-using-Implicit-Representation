@@ -37,7 +37,7 @@ def load_plenoxel_scannet_data(
     scene_name,
     cam_scale_factor=1.0,
     frame_skip=1,
-    max_frame=1000,
+    max_frame=-1,
     max_image_dim=800,
     scannet_dir = None,
     square = False):
@@ -52,8 +52,8 @@ def load_plenoxel_scannet_data(
         polygon_path = os.path.join(scannet_dir,scene_name[len(perfception_prefix):],scene_name[len(perfception_prefix):]+ '_vh_clean_2.labels.ply')
         data_path_scan = os.path.join(scannet_dir,scene_name[len(perfception_prefix):])
 
-    print(data_path_scan)
-    files = find_files(os.path.join(data_path_scan, "pose/"), exts=["*.txt"])
+    
+    files = find_files(os.path.join(data_path_scan, "pose"), exts=["*.txt"])
     assert len(files) > 0, f"{data_path_scan} does not contain poses."
     frame_ids = [int(os.path.basename(f).rstrip(".txt")) for f in files]
     frame_ids = sorted(frame_ids)
@@ -68,7 +68,7 @@ def load_plenoxel_scannet_data(
     H, W = 968.0, 1296.0
     max_hw = max(H, W)
     
-    max_image_dim = round(max_image_dim)
+    max_image_dim = round(max_image_dim) if not square else max_image_dim
 
     resize_scale = [max_image_dim/H, max_image_dim/W] if square else max_image_dim / max_hw
 
@@ -168,7 +168,7 @@ class LitDataPefceptionScannet(LitData):
         num_tpus: int,
         # scannet specific arguments
         frame_skip: int = 1,
-        max_frame: int = 1500,
+        max_frame: int = -1,
         max_image_dim: int = 800,
         cam_scale_factor: float = 1.50,
         scannet_dir = None,

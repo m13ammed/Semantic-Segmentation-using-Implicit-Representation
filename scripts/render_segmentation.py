@@ -31,7 +31,7 @@ def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, 
     n_batches = len(scannet_scene.trans_info['frame_ids'])//batch_size
     if(len(scannet_scene.trans_info['frame_ids'])%batch_size!=0): n_batches+=1
     for batch in range(n_batches):
-        labels, target_images = generate_groundtruth_render(
+        labels_, target_images = generate_groundtruth_render(
             scannet_scene=scannet_scene,
             mesh=segmented_mesh, 
             labels=labels,
@@ -41,7 +41,7 @@ def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, 
             compressed=compressed,
             rgb = rgb
         )
-        export_images(labels=labels,target_images=target_images, show_only = show_only, batch=batch, batch_size=batch_size,frame_skip=frame_skip, scene_name=scannet_scene_name, colored=colored)
+        export_images(labels=labels_,target_images=target_images, show_only = show_only, batch=batch, batch_size=batch_size,frame_skip=frame_skip, scene_name=scannet_scene_name, colored=colored)
 
 @gin.configurable()
 def generate_all_scenes(compressed, show_only,frame_skip, datadir, scannet_dir, colored=True):

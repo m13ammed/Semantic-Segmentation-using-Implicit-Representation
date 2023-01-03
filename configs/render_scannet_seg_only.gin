@@ -5,13 +5,13 @@ include "/home/rozenberszki/karim/Semantic-Segmentation-using-Implicit-Represent
 
 LitDataPefceptionScannet.frame_skip = 20
 LitDataPefceptionScannet.max_frame = -1
-LitDataPefceptionScannet.max_image_dim = 640
-
+LitDataPefceptionScannet.max_image_dim = 124
+LitDataPefceptionScannet.square = True
 
 render_seg_images.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/" #location of perfception_scannet
 render_seg_images.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans" #set to None if the scannetfile are placed inside perfecption folders
 render_seg_images.batch_size = 32
-render_seg_images.frame_skip = 20
+render_seg_images.frame_skip = 1
 
 generate_all_scenes.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/"
 generate_all_scenes.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans"

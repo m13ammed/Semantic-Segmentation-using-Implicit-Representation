@@ -3,7 +3,7 @@ for d in /home/rozenberszki/Downloads/PeRFception-ScanNet/plenoxel_scannet_scene
 
 x=$(basename $d)
 echo $x;
-python render_segmentation.py --scene_name $x ; 
+python render_segmentation.py --scene_name $x  ; 
 
 
 done
