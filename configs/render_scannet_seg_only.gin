@@ -10,15 +10,7 @@ LitDataPefceptionScannet.square = True
 
 render_seg_images.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/" #location of perfception_scannet
 render_seg_images.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans" #set to None if the scannetfile are placed inside perfecption folders
-<<<<<<< HEAD
-render_seg_images.batch_size = 32
-render_seg_images.frame_skip = 1
-
-generate_all_scenes.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/"
-generate_all_scenes.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans"
-=======
 render_seg_images.batch_size = 8
 render_seg_images.frame_skip = 1
 
 export_images.output_segmentation = "/home/rozenberszki/Downloads/ScanNet-gt-124/"
->>>>>>> main
