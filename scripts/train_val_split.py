@@ -13,7 +13,7 @@ from configs.train import train_scenes_full
 mod_scenes = [d[:-3] for d in train_scenes_full]
 scenes = np.random.choice(np.unique(mod_scenes), 141, replace= False).tolist()
 
-configs_path = '/workspace/AD_efnet/configs/'
+configs_path = '/home/rozenberszki/mohammad/Semantic-Segmentation-using-Implicit-Representation/configs/'
 
 train_opt = []
 train = []
@@ -44,7 +44,7 @@ with open(os.path.join(configs_path,"train.py"), "a") as outfile:
     
     outfile.write("train_scenes_opt =[\n")
     
-    outfile.write("\n".join(str("'" +item+"',") for item in train_opt[::6]))
+    outfile.write("\n".join(str("'" +item+"',") for item in train_opt[::5]))
     
     outfile.write("]\n")
 
@@ -57,6 +57,6 @@ with open(os.path.join(configs_path,"val.py"), "a") as outfile:
     
     outfile.write("val_scenes_opt =[\n")
     
-    outfile.write("\n".join(str("'" +item+"',") for item in val_opt[::6]))
+    outfile.write("\n".join(str("'" +item+"',") for item in val_opt[::5]))
     
     outfile.write("]\n")

@@ -37,7 +37,7 @@ class Test:
 		self.writer = writer
 		self.class_encoding = class_encoding
 		self.log_image_every = log_image_every
-
+		self.first = True
 	def run_epoch(self, iteration_loss=False, epoch_num = 0):
 		"""Runs an epoch of validation.
 
@@ -88,25 +88,28 @@ class Test:
 			self.writer.add_scalar('time_step/val', ((endTime - startTime)*1000), (epoch_num)*len(self.data_loader) + step)
 
 			if (step%self.log_image_every) == 0 :
-				if color_mean is None:
-					color_mean = np.tile(np.array(self.data_loader.dataset.color_mean).reshape(1,3,1,1), (inputs.shape[0],1,inputs.shape[-2], inputs.shape[-1]))
-					color_std = np.tile(np.array(self.data_loader.dataset.color_std).reshape(1,3,1,1), (inputs.shape[0],1,inputs.shape[-2], inputs.shape[-1]))
 				_, predictions = torch.max(outputs.data, 1)
 				gt_img = SCANNET_COLOR_MAP_20_array[labels.detach().cpu()].astype('uint8')
 				pred_img = SCANNET_COLOR_MAP_20_array[predictions.detach().cpu()].astype('uint8')
-				if epoch_num ==0:
-					rgb = (inputs.detach().cpu().numpy()[:,:3,...	]*color_std + color_mean)*255
+				self.writer.add_image(f'step_{step}_'+'pred', pred_img, epoch_num , dataformats='NHWC')
+				if self.first:
+					if color_mean is None:
+						color_mean = np.tile(np.array(self.data_loader.dataset.color_mean).reshape(1,3,1,1), (inputs.shape[0],1,inputs.shape[-2], inputs.shape[-1]))
+						color_std = np.tile(np.array(self.data_loader.dataset.color_std).reshape(1,3,1,1), (inputs.shape[0],1,inputs.shape[-2], inputs.shape[-1]))
+					slicer = inputs.shape[0]
+					rgb = (inputs.detach().cpu().numpy()[:,:3,...	]*color_std[:slicer] + color_mean[:slicer])*255
 					rgb = rgb.astype('uint8')
 					self.writer.add_image(f'step_{step}_'+'gt', gt_img, epoch_num , dataformats='NHWC')
 					self.writer.add_image(f'step_{step}_'+'rgb', rgb, epoch_num , dataformats='NCHW')
-				self.writer.add_image(f'step_{step}_'+'pred', pred_img, epoch_num , dataformats='NHWC')
+					
 
 		iou, miou = self.metric.value()
 		avg_loss = epoch_loss / len(self.data_loader)
 		self.writer.add_scalar('loss_epoch/val',  avg_loss, (epoch_num+1))
 		self.writer.add_scalar('time_epoch/val', ((endTime - first_time)*1000), (epoch_num+1))
 		self.writer.add_scalar('miou_epoch/val', miou, (epoch_num+1))
-
+		if self.first:
+			self.first = False
 		
 		for key, iou_ in zip(self.class_encoding, np.nan_to_num(iou,nan=-1)):
 			self.writer.add_scalar('val_epoch_iou/'+key, float(iou_), (epoch_num+1))

@@ -82,7 +82,6 @@ def enet_weighing(dataloader, num_classes, c=1.02):
 def load_dataset(dataset):
     if(verbose):
         print("Loading Dataset")
-    import gin
     #gin.parse_config_files_and_bindings(['configs/semantic_perf.gin'],[''])
     train_set = dataset(mode='train', use_sh = args.use_sh, allow_gen_lables = args.allow_gen_lables, use_original_norm=args.use_original_norm, opt = args.opt)
     train_loader = data.DataLoader(train_set,batch_size=args.batch_size,shuffle=False, num_workers=args.workers, collate_fn=custom_collate)

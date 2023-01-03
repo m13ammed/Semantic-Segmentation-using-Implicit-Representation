@@ -126,9 +126,9 @@ class LitPerfception(data.Dataset):
                 perf_scenes = val_scenes_opt
         else:
             if mode == 'train':
-                perf_scenes = train_scenes
+                perf_scenes = train_scenes_full
             elif mode == "val":
-                perf_scenes = val_scenes
+                perf_scenes = test_scenes#val_scenes
             elif mode == 'test':
                 perf_scenes = test_scenes
         #scannet_scenes = [f[len(perf_prefix):] for f in perf_scenes]
