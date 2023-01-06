@@ -141,6 +141,8 @@ if __name__ == "__main__":
     
     
     scene = bpy.context.scene
+    bpy.context.scene.render.resolution_x = 1296
+    bpy.context.scene.render.resolution_y = 968
 #    getCamParams(cam)
 #    K = get_K(cam)
 #    K2 = K_intrinsics(cam)
