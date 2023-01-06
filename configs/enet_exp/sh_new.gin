@@ -10,12 +10,12 @@ hparams_setup.allow_gen_lables = False
 LitPerfception.debug = False #outputs color for visualized semantic segmentation
 
 LitPerfception.gt_seg_root = '/home/rozenberszki/Downloads/ScanNet-gt-124/' #path for already computed semantic masks
-hparams_setup.use_sh = False
+hparams_setup.use_sh = True
 hparams_setup.use_original_norm = False 
 hparams_setup.opt = False
 
 additional_setup.logs_dir='/home/rozenberszki/Downloads/logs/full_training'
-additional_setup.exp_name='rgb'
+additional_setup.exp_name='sh'
 additional_setup.add_timestamp = True
 hparams_setup.validate_every=5
 
