@@ -116,7 +116,7 @@ def extract_gt_extrinsics(cam):
     cam.rotation_euler[0] = x
     scene.frame_set(scene.frame_current)
     m = np.array(cam.matrix_world)
-    x = x - math.radians(180)
+    x = x + math.radians(180)
     cam.rotation_euler[0] = x
     return m
 
@@ -134,8 +134,56 @@ def view_all_poses(intrinsics, pose_dir):
         set_intrinsics(cam, read_k)
         read_extrinsics = np.loadtxt(pose_file)
         set_extrinsics(cam, read_extrinsics)
-    
+        
+def new_cam_from_pose(name, intrinsics, pose):
+    camera_data = bpy.data.cameras.new(name=name)
+    camera_object = bpy.data.objects.new(name, camera_data)
+    scene.collection.objects.link(camera_object)
+    cam = bpy.data.objects[name]
+    set_intrinsics(cam, intrinsics)
+    set_extrinsics(cam, pose)
+#    x = cam.rotation_euler[0]
+#    x = x - math.radians(180)
+#    cam.rotation_euler[0] = x
+#    y = cam.rotation_euler[1]
+##    y = y - math.radians(180)
+#    cam.rotation_euler[1] = y
+        
 
+def rotate_point_matrix(init_pose, angle, rot_point):
+    # Translate point to origin
+    point = rot_point.copy()
+    point[1] -= 3
+    translate_matrix = np.eye(4)
+    translate_matrix[:3,3:] = -point
+
+    # Rotate point
+    angle_rad = math.radians(angle)
+    rotate_matrix = [
+        [math.cos(angle_rad), -math.sin(angle_rad), 0, 0],
+        [math.sin(angle_rad), math.cos(angle_rad), 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ]
+    
+    translate_back_matrix = np.eye(4)
+    translate_back_matrix[:3, 3:] = point
+    transformation_matrix = np.zeros(4)
+
+    transformation_matrix = translate_back_matrix @ rotate_matrix
+    transformation_matrix = transformation_matrix @ translate_matrix
+    
+    return transformation_matrix @ init_pose
+    
+def create_dome(init_pose, angle, point, step_size, intrinsics):
+    for i in range(step_size, angle, step_size):
+#        print("=========")
+#        print(init_pose, angle,point, step_size, intrinsics)
+        new_pose = rotate_point_matrix(init_pose.copy(), i, point.copy())
+#        print(new_pose)
+        new_cam_from_pose("dome_"+str(i), intrinsics, new_pose)
+        
+        
 if __name__ == "__main__":
 #    cam = bpy.data.objects['Camera']
     
@@ -158,6 +206,9 @@ if __name__ == "__main__":
     ext_cam = bpy.data.objects['new_extrinsics']
     pose = extract_gt_extrinsics(ext_cam)
     print(pose)
+    
+    create_dome(pose, 360, pose[:3,3:], 15, read_k)
+    
     np.savetxt("/Users/kghandour/development/text_ext.txt", pose)
         
  
