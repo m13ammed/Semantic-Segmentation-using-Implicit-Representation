@@ -144,8 +144,9 @@ def train(train_loader, val_loader, class_weights, class_encoding, writer):
 
     early_stopper = EarlyStopper(patience=5, min_delta=3)
     for epoch in range(start_epoch, args.epochs):
-        save_checkpoint(model, optimizer, epoch + 1, best_miou,
-									  args)
+        if(epoch % args.save_ckpt_every):
+            save_checkpoint(model, optimizer, epoch + 1, best_miou,
+                                        args)
         print(">>>> [Epoch: {0:d}] Training".format(epoch))
         lr_updater.step()
         epoch_loss, (iou, miou) = train.run_epoch(args.print_step, epoch)
@@ -277,7 +278,7 @@ def hparams_setup( batch_size=4, learning_rate=5e-3, epochs=200, beta0=0.9, beta
 
 @gin.configurable() 
 def additional_setup (logs_dir='./',exp_name='', workers=0, print_step=25, cls_weight_pth = None\
-    , add_timestamp = True, save_every_step=100, save_many_checkpoints=False, log_image_every=100):
+    , add_timestamp = True, save_every_step=100, save_many_checkpoints=False, log_image_every=100, save_ckpt_every=20):
     
     return {
         'workers':workers,
@@ -289,6 +290,7 @@ def additional_setup (logs_dir='./',exp_name='', workers=0, print_step=25, cls_w
         'add_timestamp':add_timestamp,
         'save_many_checkpoints':save_many_checkpoints,
         'log_image_every':log_image_every,
+        'save_ckpt_every':save_ckpt_every
     }
     
 if __name__ =="__main__":

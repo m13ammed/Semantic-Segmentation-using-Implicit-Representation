@@ -17,6 +17,7 @@ hparams_setup.opt = False
 additional_setup.logs_dir='/home/rozenberszki/Downloads/logs/full_training'
 additional_setup.exp_name='sh'
 additional_setup.add_timestamp = False
+additional_setup.save_ckpt_every = 20
 hparams_setup.validate_every=5
 
 hparams_setup.batch_size=160
