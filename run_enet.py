@@ -9,6 +9,8 @@ from enet.model_dataset import LitPerfception as dataset
 from enet.model_dataset import custom_collate
 from PIL import Image
 from enet.test import Test
+from enet.test_2 import Test2
+
 from enet.train_perf import Train
 from configs.scannet_constants import *
 import numpy as np
@@ -85,7 +87,7 @@ def load_dataset(dataset):
         print("Loading Dataset")
     #gin.parse_config_files_and_bindings(['configs/semantic_perf.gin'],[''])
     train_set = dataset(mode='train', use_sh = args.use_sh, allow_gen_lables = args.allow_gen_lables, use_original_norm=args.use_original_norm, opt = args.opt)
-    train_loader = data.DataLoader(train_set,batch_size=args.batch_size,shuffle=False, num_workers=args.workers, collate_fn=custom_collate)
+    train_loader = data.DataLoader(train_set,batch_size=args.batch_size,shuffle=True, num_workers=args.workers, collate_fn=custom_collate)
 
     val_set = dataset(mode='val', use_sh = args.use_sh, allow_gen_lables = False, use_original_norm=args.use_original_norm, opt = args.opt)
     val_loader = data.DataLoader(val_set,batch_size=args.batch_size,shuffle=False, num_workers=args.workers, collate_fn=custom_collate)
@@ -144,7 +146,7 @@ def train(train_loader, val_loader, class_weights, class_encoding, writer):
 
     early_stopper = EarlyStopper(patience=5, min_delta=3)
     for epoch in range(start_epoch, args.epochs):
-        if(epoch % args.save_ckpt_every):
+        if(epoch % args.save_ckpt_every == 0):
             save_checkpoint(model, optimizer, epoch + 1, best_miou,
                                         args)
         print(">>>> [Epoch: {0:d}] Training".format(epoch))
@@ -216,7 +218,7 @@ def predict(model, images, class_encoding):
 	# color_predictions = utils.batch_transform(predictions.cpu(), label_to_rgb)
 	# utils.imshow_batch(images.data.cpu(), color_predictions)
 
-def test(model, test_loader, class_weights, class_encoding):
+def test(model, test_loader, class_weights, class_encoding, epoch):
     print("\nTesting...\n")
 
     num_classes = len(class_encoding)
@@ -232,24 +234,21 @@ def test(model, test_loader, class_weights, class_encoding):
     metric = IoU(num_classes, ignore_index=ignore_index)
 
 	# Test the trained model on the test set
-    test = Test(model, test_loader, criterion, metric, device)
+    test = Test2(model, test_loader, criterion, metric, device)
 
     print(">>>> Running test dataset")
 
-    loss, (iou, miou) = test.run_epoch(args.print_step)
-    class_iou = dict(zip(class_encoding.keys(), iou))
+    loss, (iouu, miou) = test.run_epoch(args.print_step)
+    class_iou = dict(zip(class_encoding.keys(), iouu))
 
-    print(">>>> Avg. loss: {0:.4f} | Mean IoU: {1:.4f}".format(loss, miou))
-
-    # Print per class IoU
-    for key, class_iou in zip(class_encoding.keys(), iou):
-        print("{0}: {1:.4f}".format(key, class_iou))
-
-	# Show a batch of samples and labels
-    #if args.imshow_batch:
-        #print("A batch of predictions from the test set...")
-    #images, _ = next(iter(test_loader))
-    #predict(model, images, class_encoding)
+    results = {"best_moiu": miou}
+    print(miou)
+    for key, iou in zip(CLASS_LABELS_20_, np.nan_to_num(iouu,nan=-1)):
+        
+        results.update({"iou_at_best_moiu/"+key:float(iou)})
+        print(key,float(iou))
+    writer2 = SummaryWriter(log_dir=args.logs_dir)
+    writer2.add_hparams(hparams, results, run_name = args.exp_name + '_epoch_' +str(epoch))
     
 @gin.configurable()
 def hparams_setup( batch_size=4, learning_rate=5e-3, epochs=200, beta0=0.9, beta1=0.999, weight_decay=2e-4,
@@ -278,7 +277,7 @@ def hparams_setup( batch_size=4, learning_rate=5e-3, epochs=200, beta0=0.9, beta
 
 @gin.configurable() 
 def additional_setup (logs_dir='./',exp_name='', workers=0, print_step=25, cls_weight_pth = None\
-    , add_timestamp = True, save_every_step=100, save_many_checkpoints=False, log_image_every=100, save_ckpt_every=20):
+    , add_timestamp = True, save_every_step=100, save_many_checkpoints=False, log_image_every=100, save_ckpt_every=20, checkpoint=0):
     
     return {
         'workers':workers,
@@ -290,7 +289,8 @@ def additional_setup (logs_dir='./',exp_name='', workers=0, print_step=25, cls_w
         'add_timestamp':add_timestamp,
         'save_many_checkpoints':save_many_checkpoints,
         'log_image_every':log_image_every,
-        'save_ckpt_every':save_ckpt_every
+        'save_ckpt_every':save_ckpt_every,
+        'checkpoint':checkpoint
     }
     
 if __name__ =="__main__":
@@ -333,9 +333,9 @@ if __name__ =="__main__":
             test(model, test_loader, w_class, class_encoding)
     elif args.mode.lower() == 'test':
         num_classes = len(class_encoding)
-        model = ENet(num_classes).to(device)
+        model = ENet(num_classes, use_sh = args.use_sh).to(device)
         optimizer = optim.Adam(model.parameters())
-        model = load_checkpoint(model, optimizer, args.save_dir,
-									  args.checkpoint)[0]
+        model, optimizer, epoch, miou = load_checkpoint(model, optimizer, args.save_dir,
+									  args.checkpoint)
         print(model)
-        test(model, test_loader, w_class, class_encoding)
+        test(model, val_loader, w_class, class_encoding, epoch)
