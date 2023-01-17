@@ -35,5 +35,5 @@ class SegmentationShader(ShaderBase):
             #color = color[...,0,:]
         else:
             color = rgb
-        return labels_20, color
+        return labels_20, color, fragments.zbuf
     

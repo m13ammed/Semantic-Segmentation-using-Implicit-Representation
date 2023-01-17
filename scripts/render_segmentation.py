@@ -30,7 +30,7 @@ def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, 
     n_batches = len(scannet_scene.trans_info['frame_ids'])//batch_size
     if(len(scannet_scene.trans_info['frame_ids'])%batch_size!=0): n_batches+=1
     for batch in range(n_batches):
-        labels_, target_images = generate_groundtruth_render(
+        labels_, target_images, depth = generate_groundtruth_render(
             scannet_scene=scannet_scene,
             mesh=segmented_mesh, 
             labels=labels,
@@ -46,7 +46,7 @@ def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, 
             frames = scannet_scene.trans_info['frame_ids'][start_idx:]
         else:
             frames = scannet_scene.trans_info['frame_ids'][start_idx:end_idx]
-        export_images(labels=labels_,target_images=target_images, show_only = show_only, scene_name=scannet_scene_name, frame_ids = frames, colored = colored)
+        export_images(labels=labels_,target_images=target_images, depth_data=depth, show_only = show_only, scene_name=scannet_scene_name, frame_ids = frames, colored = colored)
 
 
 if __name__ == "__main__":
@@ -55,6 +55,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--compressed",
         type=bool,
+        default=True,
+        help="Export in 124x124",
+    )
+
+    parser.add_argument(
+        "--scene_name",
+        type=str,
         default=True,
         help="Export in 124x124",
     )

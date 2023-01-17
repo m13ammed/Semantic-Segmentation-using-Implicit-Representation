@@ -72,12 +72,12 @@ def generate_groundtruth_render(
     meshes = mesh.extend(poses.shape[0])
 
     # Render the  mesh from each viewing angle
-    labels_, target_images = renderer(meshes, cameras=cameras, labels=labels, rgb= rgb)
+    labels_, target_images, depth = renderer(meshes, cameras=cameras, labels=labels, rgb= rgb)
     meshes.to("cpu")
     labels.to("cpu")
     if rgb is not None:
         rgb.to("cpu")
-    return labels_, target_images#[..., :3]
+    return labels_, target_images, depth#[..., :3]
 
     
 def generate_groundtruth_render_batch_in(
