@@ -144,7 +144,7 @@ def train(train_loader, val_loader, class_weights, class_encoding, writer):
     val = Test(model, val_loader, criterion, metric, device, writer, class_encoding=CLASS_LABELS_20_, log_image_every=args.log_image_every)
     best_miou = 0
 
-    early_stopper = EarlyStopper(patience=5, min_delta=3)
+    early_stopper = EarlyStopper(patience=5, min_delta=10)
     for epoch in range(start_epoch, args.epochs):
         if(epoch % args.save_ckpt_every == 0):
             save_checkpoint(model, optimizer, epoch + 1, best_miou,

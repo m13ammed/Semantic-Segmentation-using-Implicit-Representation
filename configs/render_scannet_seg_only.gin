@@ -13,4 +13,4 @@ render_seg_images.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans" #se
 render_seg_images.batch_size = 8
 render_seg_images.frame_skip = 1
 
-export_images.output_segmentation = "/home/rozenberszki/Downloads/ScanNet-gt-124/"
+export_images.output_segmentation = "/home/rozenberszki/Downloads/ScanNet-gt-124-depth/"
