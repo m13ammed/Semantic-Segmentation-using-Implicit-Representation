@@ -7,7 +7,7 @@ def export_images(labels, target_images, depth_data, show_only=False, scene_name
     clamp_and_detach = lambda x: x.clamp(0.0, 1.0).cpu().detach().numpy()
     for frame_id, label, imgg, depth in zip(frame_ids, labels, target_images, depth_data):
         depth_out = np.array(depth.cpu(), dtype=np.float16)
-        print(depth_out.shape)
+        depth_out = depth_out.squeeze()
         if(colored):
             image = (clamp_and_detach(imgg[ ..., :3]))
             tensor = image*255
