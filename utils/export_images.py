@@ -27,6 +27,5 @@ def export_images(labels, target_images, depth_data, show_only=False, scene_name
             os.makedirs(path_scene, exist_ok=True)
             if(colored):
                 img.save(os.path.join(path_scene,str(frame_id)+".png"))
-            else:
-                np.save(os.path.join(path_scene,str(frame_id)+".npy"),img)
-                np.save(os.path.join(path_scene,str(frame_id)+"_depth.npy"),depth_out)
+            np.save(os.path.join(path_scene,str(frame_id)+".npy"),img)
+            np.save(os.path.join(path_scene,str(frame_id)+"_depth.npy"),depth_out)

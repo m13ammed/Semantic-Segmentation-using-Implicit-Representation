@@ -165,7 +165,12 @@ class LitPerfception(data.Dataset):
             assert self.poses.shape[0] == len(self.rgb_images_paths), "num of poses not equal to num of meshes"
         assert len(self.rgb_images_paths) == len(self.seg_images_paths), "num of rgb not equal to num of possioble gen images"
         assert len(self.rgb_images_paths) == len(self.seg_image_exists), "num of rgb not equal to num of seg_image_exists"
-        if not allow_gen_lables:
+        if use_original_norm:            
+            self.rgb_images_paths = [d for (d, exists) in zip(self.rgb_images_paths, self.seg_image_exists) if exists]
+            self.seg_images_paths = [d for (d, exists) in zip(self.seg_images_paths, self.seg_image_exists) if exists]
+            assert len(self.rgb_images_paths) == len(self.seg_images_paths), "num of rgb not equal to num of possioble gen images 2"
+
+        elif not allow_gen_lables:
             assert (False not in self.seg_image_exists), "there are some not generated labels"
         if use_sh:
             assert len(self.rgb_images_paths) == len(self.sh_paths), "num of poses not equal to num of sh files"

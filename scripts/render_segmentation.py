@@ -1,5 +1,6 @@
 import os, sys
 import argparse
+from tqdm import tqdm
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,6 +20,7 @@ import argparse
 @gin.configurable()
 def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, scannet_dir, batch_size, colored):
     scannet_scene_name = scannet_scene
+    if(scannet_scene_name.endswith("_01") or scannet_scene_name.endswith("_02")): exit()
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
         torch.cuda.set_device(device)
@@ -29,7 +31,7 @@ def render_seg_images(scannet_scene, compressed, show_only,frame_skip, datadir, 
     segmented_mesh,labels, rgb = load_mesh_labels(scannet_scene.polygon, device)
     n_batches = len(scannet_scene.trans_info['frame_ids'])//batch_size
     if(len(scannet_scene.trans_info['frame_ids'])%batch_size!=0): n_batches+=1
-    for batch in range(n_batches):
+    for batch in tqdm(range(n_batches)):
         labels_, target_images, depth = generate_groundtruth_render(
             scannet_scene=scannet_scene,
             mesh=segmented_mesh, 

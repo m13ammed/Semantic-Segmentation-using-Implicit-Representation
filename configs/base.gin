@@ -1,6 +1,6 @@
 LitData.batch_sampler = "all_images"
 LitData.epoch_size = 25600 
-LitData.batch_size = 2
+LitData.batch_size = 1
 LitData.chunk = 100000
 LitData.use_pixel_centers = True
 
