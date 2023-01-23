@@ -53,7 +53,7 @@ def get_target_point(pose, depth, angles):
     pitch = angles[0]
     yaw = angles[1]
     Py = depth * math.sin(yaw) * math.cos(pitch) 
-    Px = depth * math.cos(yaw) 
+    Px = depth * math.cos(pitch) 
     Pz = depth * math.cos(yaw) * math.cos(pitch)
     target[0,3] += Px
     target[1,3] += Py
@@ -145,7 +145,7 @@ def process_pose(cls_id, pose_path, depth_path, seg_path):
     # print("Initial \n", pose_np)
     # print("Target \n", target_point)
     # np.savetxt("test.txt", target_point)
-    return arr, target_point
+    return arr, target_point, angles
 
 if __name__=="__main__":    
     new_poses_dir = "/home/rozenberszki/Downloads/New_Poses"
@@ -167,14 +167,14 @@ if __name__=="__main__":
                 pose_path = os.path.join(pose_dir, pose_id+".txt")
                 depth_path = os.path.join(path_depth, scene_id, pose_id+"_depth.npy")
                 seg_path = os.path.join(path_depth, scene_id, pose_id+".npy")
-                new_poses, target_pt = process_pose(cls_id=cls_id, pose_path=pose_path, depth_path=depth_path, seg_path=seg_path)
+                new_poses, target_pt, angles = process_pose(cls_id=cls_id, pose_path=pose_path, depth_path=depth_path, seg_path=seg_path)
                 for index, new_pose in enumerate(new_poses):
                     Save_path = os.path.join(new_poses_dir, scene_id,"pose")
                     Save_target_path = os.path.join(new_poses_dir, scene_id, "target_pt")
                     os.makedirs(Save_target_path, exist_ok=True)
                     Save_target_pt = os.path.join(Save_target_path, str(cls_id)+"_"+str(p_i)+"_"+str(index)+".txt")
                     os.makedirs(Save_path, exist_ok=True)
-                    np.savetxt(Save_target_pt, target_pt)
+                    np.savetxt(Save_target_pt, np.r_[target_pt[:3, 3:].squeeze(), np.rad2deg(angles)])
                     save_file_path = os.path.join(Save_path, str(cls_id)+"_"+str(p_i)+"_"+str(index)+".txt")
                     np.savetxt(save_file_path, new_pose)
 

@@ -95,10 +95,11 @@ def generate_groundtruth_render(
     R = R.transpose(0,2,1)
     # print(scannet_scene.trans_info['frame_ids'][start_idx:end_idx], start_idx, end_idx)
     #intrinsics = torch.tensor(scannet_scene.intrinsics).expand(poses.shape[0], -1, -1)
-    intrinsics = scannet_scene.intrinsic_orig[start_idx:end_idx].copy()
+    intrinsics = scannet_scene.intrinsic_orig[:batch_size].copy()
     
     if np.array(intrinsics[:R.shape[0]]).ndim !=3 or R.ndim !=3 or T.ndim !=2:
         T = np.expand_dims(T, 0)
+    # print("Hello?", start_idx, end_idx, len(scannet_scene.intrinsic_orig), intrinsics.shape, R.shape, T.shape)
     cameras = PerspectiveCameras(
         # focal_length=((-cam_params['fx'], -cam_params['fy']),),
         # principal_point=((cam_params['mx'], cam_params['my']),),
@@ -131,7 +132,7 @@ def generate_groundtruth_render(
     labels.to("cpu")
     if rgb is not None:
         rgb.to("cpu")
-    return labels_, target_images, depth, poses#[..., :3]
+    return labels_, target_images, depth#[..., :3]
 
 
 @gin.configurable()
@@ -157,7 +158,7 @@ def render_novel_seg(scannet_scene, compressed, show_only,frame_skip, datadir, s
     n_batches = poses_list.shape[0]//batch_size
     if(len(poses_list)%batch_size!=0): n_batches+=1
     for batch in tqdm(range(n_batches)):
-        labels_, target_images, depth, poses_batch = generate_groundtruth_render(
+        labels_, target_images, depth = generate_groundtruth_render(
             scannet_scene=scannet_scene,
             mesh=segmented_mesh, 
             labels=labels,
