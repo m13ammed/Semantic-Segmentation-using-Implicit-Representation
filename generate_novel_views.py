@@ -52,11 +52,11 @@ def get_target_point(pose, depth, angles):
     target = pose.copy()
     pitch = angles[0]
     yaw = angles[1]
-    Px = depth * math.sin(yaw) * math.cos(pitch) 
-    Py = depth * math.sin(pitch) 
+    Py = depth * math.sin(yaw) * math.cos(pitch) 
+    Px = depth * math.cos(yaw) 
     Pz = depth * math.cos(yaw) * math.cos(pitch)
-    target[0,3] += Py
-    target[1,3] += Px
+    target[0,3] += Px
+    target[1,3] += Py
     # target[1,3] += depth * math.cos(angles[1])
     return target
 
@@ -84,23 +84,39 @@ def rotationMatrixToEulerAngles(R) :
 def rotate_point_matrix(init_pose, angle, rot_point):
     # Translate point to origin
     point = rot_point.copy()[:3, 3:]
+    # point = init_pose.copy()[:3, 3:]
     translate_matrix = np.eye(4)
     translate_matrix[:3,3:] = -point
 
     # Rotate point
     angle_rad = math.radians(angle)
-    rotate_matrix = [
+
+    rotate_matrix_z = [
         [math.cos(angle_rad), -math.sin(angle_rad), 0, 0],
         [math.sin(angle_rad), math.cos(angle_rad), 0, 0],
         [0, 0, 1, 0],
         [0, 0, 0, 1]
     ]
     
+    rotate_matrix_x = [
+        [1, 0, 0, 0],
+        [0, math.cos(angle_rad), -math.sin(angle_rad), 0],
+        [0, math.sin(angle_rad), math.cos(angle_rad), 0],
+        [0,0,0,1]
+    ]
+    
+    rotate_matrix_y = [
+        [math.cos(angle_rad), 0, math.sin(angle_rad), 0],
+        [0, 1, 0, 0],
+        [-math.sin(angle_rad), 0, math.cos(angle_rad), 0],
+        [0,0,0,1]
+    ]
+    
     translate_back_matrix = np.eye(4)
     translate_back_matrix[:3, 3:] = point
     transformation_matrix = np.zeros(4)
 
-    transformation_matrix = translate_back_matrix @ rotate_matrix
+    transformation_matrix = translate_back_matrix @ rotate_matrix_z
     transformation_matrix = transformation_matrix @ translate_matrix
     
     return transformation_matrix @ init_pose
@@ -129,7 +145,7 @@ def process_pose(cls_id, pose_path, depth_path, seg_path):
     # print("Initial \n", pose_np)
     # print("Target \n", target_point)
     # np.savetxt("test.txt", target_point)
-    return arr
+    return arr, target_point
 
 if __name__=="__main__":    
     new_poses_dir = "/home/rozenberszki/Downloads/New_Poses"
@@ -151,10 +167,14 @@ if __name__=="__main__":
                 pose_path = os.path.join(pose_dir, pose_id+".txt")
                 depth_path = os.path.join(path_depth, scene_id, pose_id+"_depth.npy")
                 seg_path = os.path.join(path_depth, scene_id, pose_id+".npy")
-                new_poses = process_pose(cls_id=cls_id, pose_path=pose_path, depth_path=depth_path, seg_path=seg_path)
+                new_poses, target_pt = process_pose(cls_id=cls_id, pose_path=pose_path, depth_path=depth_path, seg_path=seg_path)
                 for index, new_pose in enumerate(new_poses):
                     Save_path = os.path.join(new_poses_dir, scene_id,"pose")
+                    Save_target_path = os.path.join(new_poses_dir, scene_id, "target_pt")
+                    os.makedirs(Save_target_path, exist_ok=True)
+                    Save_target_pt = os.path.join(Save_target_path, str(cls_id)+"_"+str(p_i)+"_"+str(index)+".txt")
                     os.makedirs(Save_path, exist_ok=True)
+                    np.savetxt(Save_target_pt, target_pt)
                     save_file_path = os.path.join(Save_path, str(cls_id)+"_"+str(p_i)+"_"+str(index)+".txt")
                     np.savetxt(save_file_path, new_pose)
 
