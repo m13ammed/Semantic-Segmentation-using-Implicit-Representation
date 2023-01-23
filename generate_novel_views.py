@@ -10,47 +10,14 @@ import math
 path_depth = "/home/rozenberszki/Downloads/ScanNet-gt-124-depth"
 analysis_dict_path = "/home/rozenberszki/Downloads/class_dist_center.npy"
 scannet_path = "/home/rozenberszki/Downloads/ScanNet/scans"
-HEIGHT_NOISE = 0.2
-DEPTH_NOISE = 0.15
+HEIGHT_NOISE = 0.1
+DEPTH_NOISE = 0.05
+
+
 import random
 import time
 random.seed(time.time())
 
-# def get_target_point(pose, depth, angles):
-#     point = pose[:3,3:]
-#     translate_matrix = np.eye(4)
-#     translate_matrix[:3,3:] = -point
-
-#     # Rotate point
-#     angle_rad = angles[0]
-#     rotate_matrix = [
-#         [math.cos(angle_rad), -math.sin(angle_rad), 0, 0],
-#         [math.sin(angle_rad), math.cos(angle_rad), 0, 0],
-#         [0, 0, 1, 0],
-#         [0, 0, 0, 1]
-#     ]
-#     # point[1] += depth
-
-#     angle_rad = -angles[0]
-#     rotate_back_matrix = [
-#         [math.cos(angle_rad), -math.sin(angle_rad), 0, 0],
-#         [math.sin(angle_rad), math.cos(angle_rad), 0, 0],
-#         [0, 0, 1, 0],
-#         [0, 0, 0, 1]
-#     ]
-    
-#     translate_back_matrix = np.eye(4)
-#     translate_back_matrix[:3, 3:] = point
-#     transformation_matrix = np.zeros(4)
-
-#     transformation_matrix = translate_back_matrix @ rotate_back_matrix
-
-#     transformation_matrix[0, 3]+=depth
-#     transformation_matrix = transformation_matrix @ rotate_matrix
-
-#     transformation_matrix = transformation_matrix @ translate_matrix
-    
-#     return transformation_matrix @ pose
 
 def get_target_point(pose, depth, angles):
     target = pose.copy()
@@ -158,7 +125,7 @@ def process_pose(cls_id, pose_path, depth_path, seg_path):
 if __name__=="__main__":    
     new_poses_dir = "/home/rozenberszki/Downloads/New_Poses"
     analysis_dict = np.load(analysis_dict_path, allow_pickle='TRUE').item()
-    least_4_classes = [36, 34, 11, 28]
+    least_4_classes = [36, 34, 11, 28, 33, 12, 24, 16]
     cls_dict = {}
     for i in least_4_classes:
         val = VALID_CLASS_IDS_20.index(i)+1
@@ -185,14 +152,3 @@ if __name__=="__main__":
                     np.savetxt(Save_target_pt, np.r_[target_pt[:3, 3:].squeeze(), np.rad2deg(angles)])
                     save_file_path = os.path.join(Save_path, str(cls_id)+"_"+str(p_i)+"_"+str(index)+".txt")
                     np.savetxt(save_file_path, new_pose)
-
-
-    # for folder in tqdm(sorted(os.listdir(path_depth))):
-    #     scene_path = os.path.join(path_depth, folder)
-    #     for file in sorted(os.listdir(scene_path)):
-    #         ## Get depth
-    #         if(not file.endswith("depth.npy")):
-    #             continue
-    #         print(file)
-    #     exit()
-        

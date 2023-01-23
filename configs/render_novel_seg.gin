@@ -15,4 +15,4 @@ render_novel_seg.batch_size = 8
 render_novel_seg.frame_skip = 1
 
 export_images.output_segmentation = "/home/rozenberszki/Downloads/ScanNet-novel/"
-export_images.threshold="40"
+export_images.threshold=3000
