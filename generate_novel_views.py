@@ -10,7 +10,11 @@ import math
 path_depth = "/home/rozenberszki/Downloads/ScanNet-gt-124-depth"
 analysis_dict_path = "/home/rozenberszki/Downloads/class_dist_center.npy"
 scannet_path = "/home/rozenberszki/Downloads/ScanNet/scans"
-
+HEIGHT_NOISE = 0.2
+DEPTH_NOISE = 0.15
+import random
+import time
+random.seed(time.time())
 
 # def get_target_point(pose, depth, angles):
 #     point = pose[:3,3:]
@@ -84,6 +88,8 @@ def rotationMatrixToEulerAngles(R) :
 def rotate_point_matrix(init_pose, angle, rot_point):
     # Translate point to origin
     point = rot_point.copy()[:3, 3:]
+    point[0]+=random.uniform(-DEPTH_NOISE, DEPTH_NOISE)
+    point[1]+=random.uniform(-DEPTH_NOISE, DEPTH_NOISE)
     # point = init_pose.copy()[:3, 3:]
     translate_matrix = np.eye(4)
     translate_matrix[:3,3:] = -point
@@ -125,9 +131,11 @@ def create_dome(init_pose, angle, point, step_size):
     ret_arr = []
     for i in range(step_size, angle, step_size):
         new_pose = rotate_point_matrix(init_pose.copy(), i, point.copy())
+        new_pose[2,3]+=random.uniform(-HEIGHT_NOISE, HEIGHT_NOISE)
         ret_arr.append(new_pose)
     for i in range(-step_size, -angle, -step_size):
         new_pose = rotate_point_matrix(init_pose.copy(), i, point.copy())
+        new_pose[2,3]+=random.uniform(-HEIGHT_NOISE, HEIGHT_NOISE)
         ret_arr.append(new_pose)
     
     return ret_arr

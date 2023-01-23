@@ -31,7 +31,7 @@ from pytorch3d.renderer import (
 
 from PIL import Image
 @gin.configurable()
-def export_images(labels, target_images, depth_data, show_only=False, scene_name="1", frame_ids = [], output_segmentation = './out/', colored =False):
+def export_images(labels, target_images, depth_data, show_only=False, scene_name="1", frame_ids = [], output_segmentation = './out/', colored =False, threshold=40):
     clamp_and_detach = lambda x: x.clamp(0.0, 1.0).cpu().detach().numpy()
     for frame_id, label, imgg, depth in zip(frame_ids, labels, target_images, depth_data):
         frame_id = frame_id.split(".txt")[0]
@@ -39,7 +39,7 @@ def export_images(labels, target_images, depth_data, show_only=False, scene_name
         depth_out = depth_out.squeeze()
         seg = np.array(label.cpu(), dtype=np.uint8)
         cls_id = frame_id.split("_")[0]
-        if(np.sum(seg==int(cls_id))==0): continue
+        if(np.sum(seg==int(cls_id))<10): continue
         # print("DOES THE CLASS EXIST? COMPARING ", cls_id, "Sum:", np.sum(seg==cls_id))
         if(colored):
             image = (clamp_and_detach(imgg[ ..., :3]))

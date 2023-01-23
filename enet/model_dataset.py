@@ -111,7 +111,8 @@ class LitPerfception(data.Dataset):
             self.color_mean, self.color_std  = color_new_mean, color_new_std
         self.normalize = transforms.Normalize(mean=self.color_mean, std=self.color_std)
         if use_sh:
-            self.sh_mean, self.sh_std = np.array(sh_mean).reshape(-1,1,1), np.array(sh_std).reshape(-1,1,1)
+            self.sh_mean_, self.sh_std_ = np.array(sh_mean).reshape(-1,1,1), np.array(sh_std).reshape(-1,1,1)
+            self.sh_mean = None
         self.mode = mode
         perf_prefix = 'plenoxel_scannet_'
         self.intrinsics_scale = None
@@ -198,10 +199,11 @@ class LitPerfception(data.Dataset):
         if self.use_sh:
             sh = np.load(self.sh_paths[index])['arr_0.npy']
             sh = np.moveaxis(sh, 2, 0)
-            sh_mean = np.tile(self.sh_mean, (1,sh.shape[-2], sh.shape[-1]))
-            sh_std = np.tile(self.sh_std, (1,sh.shape[-2], sh.shape[-1]))
-            assert sh.shape == sh_mean.shape and sh.shape == sh_std.shape, f'Error in normalization shape {sh.shape}, {sh_mean.shape}, {sh_std.shape}'
-            sh = (sh-sh_mean)/sh_std
+            if self.sh_mean is None:
+                self.sh_mean = np.tile(self.sh_mean_, (1,sh.shape[-2], sh.shape[-1]))
+                self.sh_std = np.tile(self.sh_std_, (1,sh.shape[-2], sh.shape[-1]))
+            assert sh.shape == self.sh_mean.shape and sh.shape == self.sh_std.shape, f'Error in normalization shape {sh.shape}, {self.sh_mean.shape}, {self.sh_std.shape}'
+            sh = (sh-self.sh_mean)/self.sh_std
             ret_dict.update({'sh':torch.Tensor(sh)})
         
         if self.debug:
