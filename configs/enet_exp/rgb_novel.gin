@@ -1,7 +1,7 @@
-LitPerfception.perf_root = '/home/rozenberszki/Downloads/perf_render/' #path to rgb images
+LitPerfception.perf_root = '/home/rozenberszki/Downloads/merged-perf/' #path to rgb images
 LitPerfception.scannet_root = '/home/rozenberszki/Downloads/ScanNet/scans' #path to scannet (where label.ply could be found)
 
-additional_setup.workers=6
+additional_setup.workers=12
 additional_setup.print_step=25
 additional_setup.cls_weight_pth = None #'/workspace/class_dist.npy'
 additional_setup.save_many_checkpoints = True
@@ -9,15 +9,14 @@ additional_setup.log_image_every = 10
 hparams_setup.allow_gen_lables = False
 LitPerfception.debug = False #outputs color for visualized semantic segmentation
 
-LitPerfception.gt_seg_root = '/home/rozenberszki/Downloads/ScanNet-gt-124/' #path for already computed semantic masks
-hparams_setup.use_sh = True
+LitPerfception.gt_seg_root = '/home/rozenberszki/Downloads/merged-gt/' #path for already computed semantic masks
+hparams_setup.use_sh = False
 hparams_setup.use_original_norm = False 
 hparams_setup.opt = False
 
 additional_setup.logs_dir='/home/rozenberszki/Downloads/logs/full_training'
-additional_setup.exp_name='sh_trial_3'
+additional_setup.exp_name='rgb_novel'
 additional_setup.add_timestamp = True
-additional_setup.save_ckpt_every = 20
 hparams_setup.validate_every=5
 
 hparams_setup.batch_size=160

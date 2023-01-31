@@ -35,6 +35,7 @@ class Train:
 		self.device = device
 		self.writer = writer
 		self.class_encoding = class_encoding
+		self.scaler = None
 	def run_epoch(self, iteration_loss=0, epoch_num=0):
 		"""Runs an epoch of training.
 
@@ -53,21 +54,24 @@ class Train:
 		first_time = time.time()
 		for step, batch_data in enumerate(self.data_loader):
 			startTime = time.time()
+			if self.scaler is None:
+				self.enabled = self.data_loader.dataset.use_sh
+				self.scaler = torch.cuda.amp.autocast(enabled=self.enabled, dtype=torch.float16, cache_enabled=True)
 			# Get the inputs and labels
 
 			inputs, labels = self.preppare_input(batch_data)
 			# Forward propagation
-			outputs = self.model(inputs)
-			# Loss computation
-			#if labels.sum() == 0 :
-			#	print('found empty')
-			#	continue
-			loss = self.criterion(outputs, labels)
+			with torch.autocast(device_type='cuda', dtype=torch.float16, enabled= self.enabled):
+				outputs = self.model(inputs)
+	
+				loss = self.criterion(outputs, labels)
 
 			# Backpropagation
 			self.optim.zero_grad()
-			loss.backward()
-			self.optim.step()
+			self.scaler.scale(loss).backward()
+			self.scaler.step(self.optim)
+			self.scaler.update()
+
 
 			# Keep track of loss for current epoch
 			losss_item = loss.item()

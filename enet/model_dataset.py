@@ -152,7 +152,7 @@ class LitPerfception(data.Dataset):
             seg_paths = [os.path.join(gt_seg_root,scene, str(int(i.split('/')[-1][5:-4]))+'.npy') for i in rgb_paths]
             seg_images_paths = seg_images_paths + seg_paths
             if use_sh:
-                sh_paths = sh_paths +sorted(glob(os.path.join(perf_root,scene,'*.npz')))
+                sh_paths = sh_paths +sorted(glob(os.path.join(perf_root,scene,'*.pt')))
         self.seg_image_exists = [os.path.exists(pth) for pth in seg_images_paths] 
         self.rgb_images_paths = rgb_images_paths
         self.sh_paths =  sh_paths
@@ -178,13 +178,21 @@ class LitPerfception(data.Dataset):
     def __len__(self):
         return len(self.rgb_images_paths)
     def __getitem__(self, index):
-        rgb_path = self.rgb_images_paths[index]
-        rgb = np.array(Image.open(rgb_path))
-        # Reshape data from H x W x C to C x H x W
-        rgb = np.moveaxis(rgb, 2, 0)
-        # Define normalizing transform
-        # Convert image to float and map range from [0, 255] to [0.0, 1.0]. Then normalize
-        rgb = self.normalize(torch.Tensor(rgb.astype(np.float32) / 255.0))        
+        
+        if self.use_sh:
+            rgb_sh = torch.load(self.sh_paths[index])
+            sh = rgb_sh[3:]
+            rgb = rgb_sh[:3]
+            ret_dict = {'sh':sh}
+        else:
+            ret_dict = {}
+            rgb_path = self.rgb_images_paths[index]
+            rgb = np.array(Image.open(rgb_path))
+            # Reshape data from H x W x C to C x H x W
+            rgb = np.moveaxis(rgb, 2, 0)
+            # Define normalizing transform
+            # Convert image to float and map range from [0, 255] to [0.0, 1.0]. Then normalize
+            rgb = self.normalize(torch.Tensor(rgb.astype(np.float32) / 255.0))        
 
         exists = self.seg_image_exists[index]
         if exists:
@@ -193,18 +201,10 @@ class LitPerfception(data.Dataset):
         else:
             label_2d = torch.zeros((rgb.shape[1],rgb.shape[2]))
         
-        ret_dict = {'rgb':rgb,
-                    'label_2d':label_2d,} #add semantics and 
+        ret_dict.update ({'rgb':rgb,
+                    'label_2d':label_2d,} )#add semantics and 
         
-        if self.use_sh:
-            sh = np.load(self.sh_paths[index])['arr_0.npy']
-            sh = np.moveaxis(sh, 2, 0)
-            if self.sh_mean is None:
-                self.sh_mean = np.tile(self.sh_mean_, (1,sh.shape[-2], sh.shape[-1]))
-                self.sh_std = np.tile(self.sh_std_, (1,sh.shape[-2], sh.shape[-1]))
-            assert sh.shape == self.sh_mean.shape and sh.shape == self.sh_std.shape, f'Error in normalization shape {sh.shape}, {self.sh_mean.shape}, {self.sh_std.shape}'
-            sh = (sh-self.sh_mean)/self.sh_std
-            ret_dict.update({'sh':torch.Tensor(sh)})
+        
         
         if self.debug:
             ret_dict.update({'color':color,})

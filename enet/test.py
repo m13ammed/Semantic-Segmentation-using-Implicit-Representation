@@ -60,13 +60,17 @@ class Test:
 		for step, batch_data in enumerate(self.data_loader):
 			startTime = time.time()
 			inputs, labels = self.preppare_input(batch_data)
+				
+    
+			with torch.autocast(device_type='cuda', dtype=torch.float16, enabled= self.data_loader.dataset.use_sh):
 
-			with torch.no_grad():
+				with torch.no_grad():
 				# Forward propagation
-				outputs = self.model(inputs)
 
-				# Loss computation
-				loss = self.criterion(outputs, labels)
+					outputs = self.model(inputs)
+
+					# Loss computation
+					loss = self.criterion(outputs, labels)
    
 			# Keep track of loss for current epoch
 			losss_item = loss.item()

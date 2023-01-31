@@ -40,13 +40,33 @@ class InitialBlock(nn.Module):
             activation = nn.ReLU
         else:
             activation = nn.PReLU
-
+        self.rgb_sh = in_channels == 30
+        if self.rgb_sh:
+            in_channels = 3
+            
+            main_diff = 16-3
+            self.sh_branch_1 = nn.Conv2d(
+            27,
+            main_diff,
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            bias=bias)
+            self.sh_branch_2 = nn.Conv2d(
+            27,
+            in_channels,
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            bias=bias)
+        else:
+            main_diff = out_channels - in_channels
         # Main branch - As stated above the number of output channels for this
         # branch is the total minus 3, since the remaining channels come from
         # the extension branch
         self.main_branch = nn.Conv2d(
             in_channels,
-            out_channels - in_channels,
+            main_diff,
             kernel_size=3,
             stride=2,
             padding=1,
@@ -56,17 +76,24 @@ class InitialBlock(nn.Module):
         self.ext_branch = nn.MaxPool2d(3, stride=2, padding=1)
 
         # Initialize batch normalization to be used after concatenation
-        self.batch_norm = nn.BatchNorm2d(out_channels)
+        self.batch_norm = nn.BatchNorm2d(16)
 
         # PReLU layer to apply after concatenating the branches
         self.out_activation = activation()
 
     def forward(self, x):
-        main = self.main_branch(x)
-        ext = self.ext_branch(x)
+        if self.rgb_sh:
+            main = self.main_branch(x[:,:3])
+            ext = self.ext_branch(x[:,:3])
+            sh_1 = self.sh_branch_1(x[:,3:])
+            sh_2 = self.sh_branch_2(x[:,3:])
 
+            out = torch.cat((main, ext), 1) + torch.cat((sh_1, sh_2), 1)
         # Concatenate branches
-        out = torch.cat((main, ext), 1)
+        else:
+            main = self.main_branch(x)
+            ext = self.ext_branch(x)
+            out = torch.cat((main, ext), 1)
 
         # Apply batch normalization
         out = self.batch_norm(out)
@@ -489,7 +516,7 @@ class ENet(nn.Module):
 
         # Stage 1 - Encoder
         self.downsample1_0 = DownsamplingBottleneck(
-            channels,
+            16,
             64,
             return_indices=True,
             dropout_prob=0.01,
@@ -575,11 +602,11 @@ class ENet(nn.Module):
 
         # Stage 5 - Decoder
         self.upsample5_0 = UpsamplingBottleneck(
-            64, channels, dropout_prob=0.1, relu=decoder_relu)
+            64, 16, dropout_prob=0.1, relu=decoder_relu)
         self.regular5_1 = RegularBottleneck(
-            channels, padding=1, dropout_prob=0.1, relu=decoder_relu)
+            16, padding=1, dropout_prob=0.1, relu=decoder_relu)
         self.transposed_conv = nn.ConvTranspose2d(
-            channels,
+            16,
             num_classes,
             kernel_size=3,
             stride=2,

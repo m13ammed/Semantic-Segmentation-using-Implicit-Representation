@@ -1,12 +1,13 @@
 import os, sys
 import argparse
-from tqdm import tqdm
+
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 sys.path.append(ROOT_DIR)
 
+from tqdm import tqdm
 import torch
 from utils.export_images import export_images
 #from utils.scannet_scene import ScanNetScene
@@ -93,7 +94,7 @@ if __name__ == "__main__":
     # argv = sys.argv[1:]
     compressed=args.compressed
     show_only=args.show_only
-    ginc, ginb = ['/home/rozenberszki/karim/Semantic-Segmentation-using-Implicit-Representation/configs/render_scannet_seg_only.gin'], ['']
+    ginc, ginb = ['/home/rozenberszki/karim/Semantic-Segmentation-using-Implicit-Representation/configs/render_novel_seg_2.gin'], ['']
     scene_name = args.scene_name
     frame_skip = args.frame_skip
     col = args.colored
