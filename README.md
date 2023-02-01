@@ -201,8 +201,21 @@ create_dome(INITIAL_CAMERA_EXTRINSIC, MAX_ANGLE, TARGET_PT_IN_3D, INTERVALS, INT
 
 
 ## Directory Overview
-
+```python
+|
+|-analysis #Contains the saved analysis np mentioned in the Class analysis
+|-blender_scripts #Helper scripts to use blender for debugging
+|-configs #Contains configuration files for ginc and set of scenes to be used for training, validation and testing
+|-dataloader #PeRFception and ScanNet dataset loaders
+|-enet #Segmentation model logic
+|-lib #Plenoxel specific CUDA library files
+|-model #PeRFception model reconstruction
+|-scripts #Scripts for rendering 
+|-static #Resources for the README
+|-utils #Utility scripts used in several locations like exporting images and custom segmentation shader
+```
 ## References:
 1. YoonwooJeong,SeungjooShin,JunhaLee,ChrisChoy,An- ima Anandkumar, Minsu Cho, and Jaesik Park. Perfcep- tion: Perception using radiance fields. [Github](https://github.com/POSTECH-CVLab/PeRFception)
 2. Angela Dai, Angel X Chang, Manolis Savva, Maciej Hal- ber, Thomas Funkhouser, and Matthias Nießner. Scannet: Richly-annotated 3d reconstructions of indoor scenes. [Website](http://www.scan-net.org/)
 3. Krishna Murthy. ENet-ScanNet [Github](https://github.com/krrish94/ENet-ScanNet)
+4. Alex Yu, Sara Fridovich-Keil, Matthew Tancik, Qinhong Chen, Benjamin Recht, and Angjoo Kanazawa. Plenoxels: Radiance fields without neural networks. [Github](https://github.com/sxyu/svox2)
