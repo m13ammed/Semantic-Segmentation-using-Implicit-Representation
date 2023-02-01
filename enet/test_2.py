@@ -61,9 +61,13 @@ class Test2:
 			startTime = time.time()
 			inputs, labels = self.preppare_input(batch_data)
 
-			with torch.no_grad():
+			#autocast for mixed precison if using sh 
+			with torch.autocast(device_type='cuda', dtype=torch.float16, enabled= self.data_loader.dataset.use_sh):
+
+				with torch.no_grad():
 				# Forward propagation
-				outputs = self.model(inputs)
+
+					outputs = self.model(inputs)
 
 				# Loss computation
 				loss = self.criterion(outputs, labels)

@@ -178,7 +178,7 @@ chmod +x rgb_novel.sh
 ./rgb_novel.sh
 ```
 
-<!-- ## Testing
+## Testing
 1. Modify any of the training ginc files with the full experiment name
 2. We provided a checkpoint for testing in `analysis/sh_model/`
 ```
