@@ -1,6 +1,6 @@
 # Semantic Segmentation using Implicit Representation
 ### Quick Links:
-[Report]() - [Poster](static/Poster.pdf)
+[Report](static/FinalReport.pdf) - [Poster](static/Poster.pdf)
 
 ### Author Info:
 - Mohammad Rashed [[Github](https://github.com/m13ammed/)]
