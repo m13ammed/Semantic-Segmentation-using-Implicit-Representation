@@ -17,6 +17,7 @@ class Train:
 	"""
 
 	def __init__(self, model, data_loader, optim, criterion, metric, device):
+
 		self.model = model
 		self.data_loader = data_loader
 		self.optim = optim

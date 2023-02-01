@@ -20,7 +20,7 @@ from model.plenoxel_torch.__global__ import BASIS_TYPE_SH
 
 
 @gin.configurable()
-class LitPlenoxel(LitModel):
+class LitPlenoxel(LitModel): # a cleaned up version of the plenoxels model. keeping only parts ruiqurd for init teh model laoding and doing inference 
 
     # The external dataset will be called.
     def __init__(
@@ -410,7 +410,7 @@ class LitPlenoxel(LitModel):
                 batch, batch_idx, cpu=True, prefix="bg", render_bg=True
             )
             ret.update(bg)
-        elif self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet":
+        elif self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet": #if using out perfception data compute fg only
             fg = self.render_rays(
                 batch,
                 batch_idx,
@@ -455,10 +455,10 @@ class LitPlenoxel(LitModel):
             )
 
         keys = ["bg/rgb"] if self.bkgd_only else ["fgbg/rgb", "fg/rgb", "mask"]
-        if self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet":
+        if self.trainer.datamodule.__class__.__name__=="LitDataPefceptionScannet": #if using our dataloadaer
             keys = ["fg/rgb"]
             if out_sh:
-                keys.append("sh")
+                keys.append("sh") #append the sh in addditon to the rgb_fg
         rets = {}
         for key in keys:
             ret = self.alter_gather_cat(outputs[0], key, image_sizes)
@@ -489,9 +489,9 @@ class LitPlenoxel(LitModel):
                     os.makedirs(opt_path, exist_ok=True)
                 else:
                     opt_path = scene_path
-                store_util.store_image_pose_num(opt_path, rets[f"fg/rgb"], frame_ids)
+                store_util.store_image_pose_num(opt_path, rets[f"fg/rgb"], frame_ids) #save rgb images
                 if out_sh:
-                    store_util.store_sh_pose_num(opt_path, rets[f"sh"], frame_ids)
+                    store_util.store_sh_pose_num(opt_path, rets[f"sh"], frame_ids) #save sh harmonics as npz files
             else:
                 for opt in opt_list:
                     opt_path = os.path.join(scene_path, opt)
@@ -505,9 +505,9 @@ class LitPlenoxel(LitModel):
                 store_util.store_mask(mask_path, rets["mask"])
 
         #if self.bkgd_only:
-        np.save(f"{scene_path}/perf_poses.npy", self.trainer.datamodule.render_poses)
-        np.save(f"{scene_path}/intrinsics.npy", self.trainer.datamodule.intrinsics)
-        np.save(f"{scene_path}/poses.npy", self.trainer.datamodule.extrinsics)
+        np.save(f"{scene_path}/perf_poses.npy", self.trainer.datamodule.render_poses) #save the poses in perf format (transformed to be aligned with the sparse grid)
+        np.save(f"{scene_path}/intrinsics.npy", self.trainer.datamodule.intrinsics) #save intriscis of camera
+        np.save(f"{scene_path}/poses.npy", self.trainer.datamodule.extrinsics) #save the poses in original fomrat
 
     def on_save_checkpoint(self, checkpoint) -> None:
 

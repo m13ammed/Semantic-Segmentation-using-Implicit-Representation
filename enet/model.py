@@ -41,7 +41,7 @@ class InitialBlock(nn.Module):
         else:
             activation = nn.PReLU
         self.rgb_sh = in_channels == 30
-        if self.rgb_sh:
+        if self.rgb_sh: #if using sh and rgb initilizate the conv layers for the convolove and sum approach
             in_channels = 3
             
             main_diff = 16-3
@@ -82,7 +82,7 @@ class InitialBlock(nn.Module):
         self.out_activation = activation()
 
     def forward(self, x):
-        if self.rgb_sh:
+        if self.rgb_sh: #convolove and sum
             main = self.main_branch(x[:,:3])
             ext = self.ext_branch(x[:,:3])
             sh_1 = self.sh_branch_1(x[:,3:])
@@ -90,7 +90,8 @@ class InitialBlock(nn.Module):
 
             out = torch.cat((main, ext), 1) + torch.cat((sh_1, sh_2), 1)
         # Concatenate branches
-        else:
+        
+        else: #typical enet conv adn max pool then concatenate branches
             main = self.main_branch(x)
             ext = self.ext_branch(x)
             out = torch.cat((main, ext), 1)

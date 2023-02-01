@@ -51,13 +51,13 @@ def enet_weighing(dataloader, num_classes, c=1.02):
     the interval of values for the weights. Default: 1.02.
 
     """
-    if args.cls_weight_pth is None:
+    if args.cls_weight_pth is None:  #if class wieghts are not precomputed compute them
         class_count = 0
         total = 0
         for ret in dataloader:
-            if not dataloader.dataset.allow_gen_lables:
+            if not dataloader.dataset.allow_gen_lables: #just retireve the labels
                 label =  ret['labels_2d'].cpu().numpy().astype('int64')
-            else:
+            else: #if allow gen labels compute the labels for missing ones
                 intrinsic, poses= ret['intrinsic'], ret['poses']
                 mesh, labels, idx_to_ren = ret['mesh'], ret['labels'], ret['idx_to_ren']
                 labels_2d = ret['labels_2d'].to(device)
@@ -71,13 +71,13 @@ def enet_weighing(dataloader, num_classes, c=1.02):
             flat_label = label.flatten()
             # Sum up the number of pixels of each class and the total pixel
             # counts for each label
-            class_count += np.bincount(flat_label, minlength=num_classes)
+            class_count += np.bincount(flat_label, minlength=num_classes) #accumulte number of oixel per classs 
         total += flat_label.size
-        propensity_score = class_count / total
-    else:
+        propensity_score = class_count / total #number of pixel per class relative to the total num of classes
+    else: #if the class wieght are precomputed and saved in given class_wegiths path laod them
         count = np.array(list(np.load(args.cls_weight_pth, allow_pickle=True).tolist().values()))
         # Compute propensity score and then the weights for each class
-        propensity_score = count / count.sum()
+        propensity_score = count / count.sum() #number of pixel per class relative to the total num of classes
     class_weights = 1 / (np.log(c + propensity_score))
 
     return class_weights
@@ -134,12 +134,13 @@ def train(train_loader, val_loader, class_weights, class_encoding, writer):
 									 args.lr_decay)
     
     metric = IoU(num_classes, ignore_index=ignore_index)
-    if args.resume:
+    if args.resume: #if rsuming load checkpoint
         model, optimizer, start_epoch, best_miou = load_checkpoint(model, optimizer, args.save_dir, args.checkpoint)
         print("Resuming from model: Start epoch = {0} | Best mean IoU = {1:.4f}".format(start_epoch, best_miou))
     else:
         start_epoch = 0
         best_miou = 0
+    #init trainer and tester (validation)
     train = Train(model, train_loader, optimizer, criterion, metric, device, writer, class_encoding=CLASS_LABELS_20_)
     val = Test(model, val_loader, criterion, metric, device, writer, class_encoding=CLASS_LABELS_20_, log_image_every=args.log_image_every)
     best_miou = 0
@@ -169,7 +170,7 @@ def train(train_loader, val_loader, class_weights, class_encoding, writer):
             	for key, class_iou in zip(class_encoding.keys(), iou):
                     print("{0}: {1:.4f}".format(key, class_iou))
 
-			# Save the model if it's the best thus far
+			# Save the model if it's the best so far
             if miou > best_miou:
                 print("\nBest model thus far. Saving...\n")
                 best_miou = miou
@@ -177,7 +178,7 @@ def train(train_loader, val_loader, class_weights, class_encoding, writer):
                 save_checkpoint(model, optimizer, epoch + 1, best_miou,
 									  args)
             
-            if(early_stopper.early_stop(loss)):
+            if(early_stopper.early_stop(loss)): #if stopping experiment logg best miou and the iou per class for that epoch this generates hparams table to compare models and their hparams quickly
                 print("Early stopping")
                 save_checkpoint(model, optimizer, epoch + 1, miou,
 									  args)
@@ -241,9 +242,9 @@ def test(model, test_loader, class_weights, class_encoding, epoch):
     loss, (iouu, miou) = test.run_epoch(args.print_step)
     class_iou = dict(zip(class_encoding.keys(), iouu))
 
-    results = {"best_moiu": miou}
+    results = {"best_moiu": miou} #log the miou into tensorboard hparams
     print(miou)
-    for key, iou in zip(CLASS_LABELS_20_, np.nan_to_num(iouu,nan=-1)):
+    for key, iou in zip(CLASS_LABELS_20_, np.nan_to_num(iouu,nan=-1)): #log iou per class into tensorboard harams summary table
         
         results.update({"iou_at_best_moiu/"+key:float(iou)})
         print(key,float(iou))
@@ -254,6 +255,27 @@ def test(model, test_loader, class_weights, class_encoding, epoch):
 def hparams_setup( batch_size=4, learning_rate=5e-3, epochs=200, beta0=0.9, beta1=0.999, weight_decay=2e-4,
                   lr_decay_epochs=100, lr_decay=0.5, validate_every=1, use_sh = False, allow_gen_lables = False,
                   use_original_norm=False, opt = False):
+    """ 
+                    It sets up the hyperparameters for the model.
+                    
+                    :param batch_size: The number of images to be used in each batch, defaults to 4 (optional)
+                    :param learning_rate: The learning rate for the Adam optimizer
+                    :param epochs: number of epochs to train for, defaults to 200 (optional)
+                    :param beta0: beta0 for Adam optimizer
+                    :param beta1: The exponential decay rate for the 1st moment estimates
+                    :param weight_decay: weight decay for the optimizer
+                    :param lr_decay_epochs: number of epochs after which the learning rate is decayed by lr_decay,
+                    defaults to 100 (optional)
+                    :param lr_decay: the learning rate decay factor
+                    :param validate_every: How often to validate the model, defaults to 1 (optional)
+                    :param use_sh: whether to use spherical harmonics or not, defaults to False (optional)
+                    :param allow_gen_lables: If True, the model will generate labels if not found. If False, the
+                    raise error on missin labels, defaults to False (optional)
+                    :param use_original_norm: If True, use the original normalization mean and std of scannet. If False, use the new
+                    normalization method, defaults to False (optional)
+                    :param opt: if True, use use subset of data, defaults to False (optional)
+    """
+
     params  = {
         "batch_size":batch_size,
         "learning_rate":learning_rate,
@@ -270,7 +292,7 @@ def hparams_setup( batch_size=4, learning_rate=5e-3, epochs=200, beta0=0.9, beta
         'opt': opt
     }
     import random
-    for key in params.keys():
+    for key in params.keys(): #if any variable is a list then choose randomly this is beefeical for running random search ie run 100 times and each time random parameters 
         if isinstance(params[key], list):
             params[key] = random.choice(params[key])
     return params
@@ -278,7 +300,25 @@ def hparams_setup( batch_size=4, learning_rate=5e-3, epochs=200, beta0=0.9, beta
 @gin.configurable() 
 def additional_setup (logs_dir='./',exp_name='', workers=0, print_step=25, cls_weight_pth = None\
     , add_timestamp = True, save_every_step=100, save_many_checkpoints=False, log_image_every=100, save_ckpt_every=20, checkpoint=0):
+
+    """
     
+    
+    :param logs_dir: The directory where the logs will be saved, defaults to ./ (optional)
+    :param exp_name: name of the experiment
+    :param workers: number of workers to use for data loading, defaults to 0 (optional)
+    :param print_step: How often to print the loss, defaults to 25 (optional)
+    :param cls_weight_pth: path to the class weights file. If you don't have one, you can use the one in
+    the repo
+    :param add_timestamp: If True, adds a timestamp to the experiment name, defaults to True (optional)
+    :param save_every_step: Save the model every save_every_step steps, defaults to 100 (optional)
+    :param save_many_checkpoints: If True, saves a checkpoint every save_ckpt_every epochs. If False,
+    saves only the best checkpoint, defaults to False (optional)
+    :param log_image_every: How often to log images to tensorboard, defaults to 100 (optional)
+    :param save_ckpt_every: Save a checkpoint every x steps, defaults to 20 (optional)
+    :param checkpoint: the checkpoint number to load from. If you want to start from scratch, set this
+    to 0, defaults to 0 (optional)
+    """
     return {
         'workers':workers,
         'print_step':print_step,
@@ -298,15 +338,15 @@ if __name__ =="__main__":
         prog="ENet Runner for ScanNet and Perfception",
         description="Takes as input the perfception renders and the corresponding ground truth for semantic segmentation"
     )
-    parser.add_argument('-res','--resume', default=False)
-    parser.add_argument('-m','--mode',default="train")
+    parser.add_argument('-res','--resume', default=False, help="set True to resume training")
+    parser.add_argument('-m','--mode',default="train", help="train, full, or test")
     parser.add_argument('-c','--checkpoint', default=None, help="checkpoint to load name")
     parser.add_argument(
         "--ginc",
         action="append",
-        help="gin config file",
+        help="path to gin configuration file",
     )
-
+    #load and parse configs
     args = parser.parse_args()
 
     gin.parse_config_files_and_bindings(args.ginc,[])
@@ -314,10 +354,11 @@ if __name__ =="__main__":
     hparams = hparams_setup()
     setup_ = additional_setup()
     args = vars(args)
+    #combine all configs while keeping a copy of hparams to log
     args.update(hparams)
     args.update(setup_)
     args = argparse.Namespace(**args)
-    if args.add_timestamp:
+    if args.add_timestamp: #add timestamp to the exp name, useful runnig many exp or random search
         import datetime
         ct = datetime.datetime.now()
         ts = str(int(ct.timestamp()))
@@ -327,10 +368,10 @@ if __name__ =="__main__":
     train_loader, val_loader, test_loader = loaders
     if args.mode.lower() in {'train', 'full'}:
         #print("Weight classes", w_class.shape)
-        writer = SummaryWriter(log_dir=args.save_dir)
-        model = train(train_loader, val_loader, w_class, class_encoding,writer)
+        writer = SummaryWriter(log_dir=args.save_dir) #initialize sumamry writer
+        model = train(train_loader, val_loader, w_class, class_encoding,writer) #start training
         if args.mode.lower() == 'full':
-            test(model, test_loader, w_class, class_encoding)
+            test(model, test_loader, w_class, class_encoding) #test
     elif args.mode.lower() == 'test':
         num_classes = len(class_encoding)
         model = ENet(num_classes, use_sh = args.use_sh).to(device)

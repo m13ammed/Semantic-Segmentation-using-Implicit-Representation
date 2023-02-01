@@ -362,7 +362,7 @@ class SparseGrid(nn.Module):
         assert rays.is_cuda
         grad_density, grad_sh, grad_basis, grad_bg = self._get_data_grads()
         rgb_out = torch.zeros_like(rgb_gt, dtype=torch.float32)
-        sh_out = torch.zeros((rgb_gt.shape[0], 27), dtype=torch.float32, device=rgb_out.device)  ## TODO debug dimensions and output
+        sh_out = torch.zeros((rgb_gt.shape[0], 27), dtype=torch.float32, device=rgb_out.device)  ## intilizate placeholder for  sh
         mask_out = torch.ones_like(rgb_gt, dtype=torch.bool)
         basis_data: Optional[torch.Tensor] = None 
         self.sparse_grad_indexer = torch.zeros(
@@ -402,7 +402,7 @@ class SparseGrid(nn.Module):
             render_fg,
             render_bg,
             rgb_out,
-            sh_out,
+            sh_out, #output out the sh 
             mask_out,
             grad_holder,
         )
