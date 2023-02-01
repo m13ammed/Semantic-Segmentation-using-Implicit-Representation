@@ -56,7 +56,7 @@ class Train:
 			startTime = time.time()
 			if self.scaler is None:
 				self.enabled = self.data_loader.dataset.use_sh
-				self.scaler = torch.cuda.amp.autocast(enabled=self.enabled, dtype=torch.float16, cache_enabled=True)
+				self.scaler = torch.cuda.amp.GradScaler(enabled=self.enabled)
 			# Get the inputs and labels
 
 			inputs, labels = self.preppare_input(batch_data)
