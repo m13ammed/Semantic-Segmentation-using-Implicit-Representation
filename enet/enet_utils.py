@@ -69,7 +69,9 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
         folder_dir), "The directory \"{0}\" doesn't exist.".format(folder_dir)
 
     # Create folder to save model and information
-    model_path = os.path.join(folder_dir, filename)
+    model_path = folder_dir
+    if(filename is not None):
+        model_path = os.path.join(folder_dir, filename)
     assert os.path.isfile(
         model_path), "The model file \"{0}\" doesn't exist.".format(filename)
 
@@ -79,5 +81,6 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
     optimizer.load_state_dict(checkpoint['optimizer'])
     epoch = checkpoint['epoch']
     miou = checkpoint['miou']
+    print(checkpoint['state_dict'])
 
     return model, optimizer, epoch, miou

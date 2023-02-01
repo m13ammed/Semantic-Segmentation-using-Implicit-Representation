@@ -1,0 +1,18 @@
+# include "/home/rozenberszki/karim/Semantic-Segmentation-using-Implicit-Representation/configs/base_seg.gin"
+
+
+
+
+LitDataPefceptionScannet.frame_skip = 20
+LitDataPefceptionScannet.max_frame = -1
+LitDataPefceptionScannet.max_image_dim = 124
+LitDataPefceptionScannet.square = True
+
+render_novel_seg.pose_dir = "/home/rozenberszki/Downloads/New_Poses/"
+render_novel_seg.datadir = "/home/rozenberszki/Downloads/PeRFception-ScanNet/" #location of perfception_scannet
+render_novel_seg.scannet_dir = "/home/rozenberszki/Downloads/ScanNet/scans" #set to None if the scannetfile are placed inside perfecption folders
+render_novel_seg.batch_size = 8
+render_novel_seg.frame_skip = 1
+
+export_images.output_segmentation = "/home/rozenberszki/Downloads/ScanNet-novel/"
+export_images.threshold=3000

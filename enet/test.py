@@ -25,6 +25,8 @@ class Test:
 	- metric (```Metric``): An instance specifying the metric to return.
 	- device (``torch.device``): An object representing the device on which
 	tensors are allocated.
+	- writer: tensorboard summarywriter
+	- class_encoding: maps class num to the class name or color
 
 	"""
 
@@ -60,13 +62,17 @@ class Test:
 		for step, batch_data in enumerate(self.data_loader):
 			startTime = time.time()
 			inputs, labels = self.preppare_input(batch_data)
+				
+			#autocast for mixed precison if using sh 
+			with torch.autocast(device_type='cuda', dtype=torch.float16, enabled= self.data_loader.dataset.use_sh):
 
-			with torch.no_grad():
+				with torch.no_grad():
 				# Forward propagation
-				outputs = self.model(inputs)
 
-				# Loss computation
-				loss = self.criterion(outputs, labels)
+					outputs = self.model(inputs)
+
+					# Loss computation
+					loss = self.criterion(outputs, labels)
    
 			# Keep track of loss for current epoch
 			losss_item = loss.item()
@@ -83,11 +89,12 @@ class Test:
 					1000*(avgTime / (numTimeSteps if numTimeSteps>0 else 1)), loss.item()))
 				numTimeSteps = 0
 				avgTime = 0.
-    
+			#logging per step losses and time
 			self.writer.add_scalar('loss_step/val', losss_item, (epoch_num)*len(self.data_loader) + step ) 
 			self.writer.add_scalar('time_step/val', ((endTime - startTime)*1000), (epoch_num)*len(self.data_loader) + step)
 
-			if (step%self.log_image_every) == 0 :
+			#logging prediction images, gt labels, and rgb imges into tensorboard
+			if (step%self.log_image_every) == 0 : #only log gt and rgb at the first validation epoch
 				_, predictions = torch.max(outputs.data, 1)
 				gt_img = SCANNET_COLOR_MAP_20_array[labels.detach().cpu()].astype('uint8')
 				pred_img = SCANNET_COLOR_MAP_20_array[predictions.detach().cpu()].astype('uint8')
@@ -102,7 +109,7 @@ class Test:
 					self.writer.add_image(f'step_{step}_'+'gt', gt_img, epoch_num , dataformats='NHWC')
 					self.writer.add_image(f'step_{step}_'+'rgb', rgb, epoch_num , dataformats='NCHW')
 					
-
+		#logging per epoch metrics
 		iou, miou = self.metric.value()
 		avg_loss = epoch_loss / len(self.data_loader)
 		self.writer.add_scalar('loss_epoch/val',  avg_loss, (epoch_num+1))
@@ -110,19 +117,21 @@ class Test:
 		self.writer.add_scalar('miou_epoch/val', miou, (epoch_num+1))
 		if self.first:
 			self.first = False
-		
+		#logging iou per class
 		for key, iou_ in zip(self.class_encoding, np.nan_to_num(iou,nan=-1)):
 			self.writer.add_scalar('val_epoch_iou/'+key, float(iou_), (epoch_num+1))
 
 		return avg_loss, (iou, miou)
 	def preppare_input(self, batch):
 		if self.data_loader.dataset.use_sh:
+			#if using sh concatinate rgb with sh 
 			inputs =  torch.cat((batch['rgb'], batch['sh']), 1)
 		else:
 			inputs = batch['rgb']
 		if not self.data_loader.dataset.allow_gen_lables:
 			return inputs.to(self.device), batch['labels_2d'].long().to(self.device)
 		else:
+			#generate the missing labels on the fly
 			intrinsic, poses= batch['intrinsic'], batch['poses']
 			mesh, labels, idx_to_ren = batch['mesh'], batch['labels'], batch['idx_to_ren']
 			labels_2d = batch['labels_2d'].to(self.device)

@@ -1,1 +1,1 @@
-python run_enet.py --ginc=configs/enet_exp/sh.gin
+python run_enet.py --ginc=configs/enet_exp/sh_new.gin

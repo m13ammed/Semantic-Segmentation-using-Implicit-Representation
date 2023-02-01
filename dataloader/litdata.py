@@ -84,6 +84,7 @@ def load_plenoxel_scannet_data(
         axis=1,
     )
     frame_ids = frame_ids[numerics]
+    print(f"num of valid poses: {len(frame_ids)}")
     poses = poses[numerics]
 
     # load intrinsics

@@ -88,38 +88,43 @@ def custom_collate(data):
         })
     return ret
 @gin.configurable()
+# It loads the RGB and SH images, and if the labels are not found, it generates them using the mesh
+# and poses
 class LitPerfception(data.Dataset):
     def __init__(
         self,
         perf_root='/data/',
         scannet_root = '/scannet_data/ScanNet/scans/',
-        gt_seg_root = '/seg_data/', #path to already generated 
+        gt_seg_root = '/seg_data/', #path to already generated gt labels
         allow_gen_lables = True, #wether to allow generating labels if seg image is not found
-        use_sh = True,
-        use_original_norm = False,
+        use_sh = True,  #use sh in addition to rgb
+        use_original_norm = False, # set true to use the scannet original rgb images mean and std
         mode = "train",
         frame_skip = None, #Not Implemented,
-        debug = False,
-        opt = False
+        debug = False, #exports color images of the gt sematnic labels
+        opt = False     # for optimization setting true will only load a subset of the total dataset for hyperparametrs optimization
         
     ):
         super().__init__()
         self.orgin_size = [968.0, 1296.0] #H, W
+        #select original mean adn std vs the rendered ones
         if use_original_norm:
             self.color_mean, self.color_std  = [0.496342, 0.466664, 0.440796], [0.277856, 0.286230, 0.291129]
         else:
             self.color_mean, self.color_std  = color_new_mean, color_new_std
         self.normalize = transforms.Normalize(mean=self.color_mean, std=self.color_std)
-        if use_sh:
-            self.sh_mean, self.sh_std = np.array(sh_mean).reshape(-1,1,1), np.array(sh_std).reshape(-1,1,1)
+        #if using sh add the 
+        if use_sh: # set mean and std for sh, currently not used due to direclt loading sh that had been preprocesed beforehand
+            self.sh_mean_, self.sh_std_ = np.array(sh_mean).reshape(-1,1,1), np.array(sh_std).reshape(-1,1,1)
+            self.sh_mean = None
         self.mode = mode
-        perf_prefix = 'plenoxel_scannet_'
-        self.intrinsics_scale = None
+        perf_prefix = 'plenoxel_scannet_' #a prefix which should be removed if looking into scannet folders, just naming convention
+        self.intrinsics_scale = None    #scaling of intrisics, if the images were not genral in the orignal full resolutona and aspect ratio. Here initialize as none to compute in the get item
         self.debug = debug
-        self.allow_gen_lables = allow_gen_lables
+        self.allow_gen_lables = allow_gen_lables #wether to allow generating labels on the fly if label file was pre generated
         self.use_sh = use_sh
         
-        if opt:
+        if opt: #if optimzaiton select only small subset of the data
             if mode == 'train':
                 perf_scenes = train_scenes_opt
             elif mode == "val":
@@ -138,25 +143,25 @@ class LitPerfception(data.Dataset):
         perf_intrinsics_list = []
         poses_list = []
         meshes_list = []
-        for scene in perf_scenes:
-            rgb_paths = sorted(glob(os.path.join(perf_root,scene,'*.jpg')))
+        for scene in perf_scenes: #iterate thorugh the scenses
+            rgb_paths = sorted(glob(os.path.join(perf_root,scene,'*.jpg'))) #retieve images paths
             rgb_images_paths = rgb_images_paths + rgb_paths
             if self.allow_gen_lables:
-                perf_intrinsics_list.append(np.load(os.path.join(perf_root,scene,'intrinsics.npy')))
-                poses_list.append(np.load(os.path.join(perf_root,scene,'poses.npy')))
+                perf_intrinsics_list.append(np.load(os.path.join(perf_root,scene,'intrinsics.npy'))) #load instirincs 
+                poses_list.append(np.load(os.path.join(perf_root,scene,'poses.npy'))) #load poses
                 scannet_scene = scene[len(perf_prefix):]
-                meshes_list_ = [os.path.join(scannet_root,scannet_scene, scannet_scene+'_vh_clean_2.labels.ply')] * len(rgb_paths)
+                meshes_list_ = [os.path.join(scannet_root,scannet_scene, scannet_scene+'_vh_clean_2.labels.ply')] * len(rgb_paths) #add path of scannet label mesh
                 meshes_list = meshes_list + meshes_list_  
             #seg_images_paths.append(sorted(glob(os.path.join(gt_seg_root,scene,'*.jpg'))))
-            seg_paths = [os.path.join(gt_seg_root,scene, str(int(i.split('/')[-1][5:-4]))+'.npy') for i in rgb_paths]
+            seg_paths = [os.path.join(gt_seg_root,scene, str(int(i.split('/')[-1][5:-4]))+'.npy') for i in rgb_paths] #locate the gt semantic labels
             seg_images_paths = seg_images_paths + seg_paths
             if use_sh:
-                sh_paths = sh_paths +sorted(glob(os.path.join(perf_root,scene,'*.npz')))
-        self.seg_image_exists = [os.path.exists(pth) for pth in seg_images_paths] 
+                sh_paths = sh_paths +sorted(glob(os.path.join(perf_root,scene,'*.pt'))) #if using sh add paths of the sh images ts (this file is combined with the rgb and noramlized)
+        self.seg_image_exists = [os.path.exists(pth) for pth in seg_images_paths] # check if missing gt
         self.rgb_images_paths = rgb_images_paths
         self.sh_paths =  sh_paths
         self.seg_images_paths = seg_images_paths
-        if self.allow_gen_lables:
+        if self.allow_gen_lables: 
             self.perf_intrinsics = np.concatenate(perf_intrinsics_list, axis=0)#.squeeze(0)
             self.poses = np.concatenate(poses_list, axis=0)#.squeeze(0)
             self.meshes_list = meshes_list
@@ -165,20 +170,33 @@ class LitPerfception(data.Dataset):
             assert self.poses.shape[0] == len(self.rgb_images_paths), "num of poses not equal to num of meshes"
         assert len(self.rgb_images_paths) == len(self.seg_images_paths), "num of rgb not equal to num of possioble gen images"
         assert len(self.rgb_images_paths) == len(self.seg_image_exists), "num of rgb not equal to num of seg_image_exists"
-        if not allow_gen_lables:
+        if use_original_norm:            
+            self.rgb_images_paths = [d for (d, exists) in zip(self.rgb_images_paths, self.seg_image_exists) if exists]
+            self.seg_images_paths = [d for (d, exists) in zip(self.seg_images_paths, self.seg_image_exists) if exists]
+            assert len(self.rgb_images_paths) == len(self.seg_images_paths), "num of rgb not equal to num of possioble gen images 2"
+
+        elif not allow_gen_lables:
             assert (False not in self.seg_image_exists), "there are some not generated labels"
         if use_sh:
             assert len(self.rgb_images_paths) == len(self.sh_paths), "num of poses not equal to num of sh files"
     def __len__(self):
         return len(self.rgb_images_paths)
     def __getitem__(self, index):
-        rgb_path = self.rgb_images_paths[index]
-        rgb = np.array(Image.open(rgb_path))
-        # Reshape data from H x W x C to C x H x W
-        rgb = np.moveaxis(rgb, 2, 0)
-        # Define normalizing transform
-        # Convert image to float and map range from [0, 255] to [0.0, 1.0]. Then normalize
-        rgb = self.normalize(torch.Tensor(rgb.astype(np.float32) / 255.0))        
+        
+        if self.use_sh:
+            rgb_sh = torch.load(self.sh_paths[index]) #load the pt file and seperate into rgb and sh
+            sh = rgb_sh[3:]
+            rgb = rgb_sh[:3]
+            ret_dict = {'sh':sh}
+        else:
+            ret_dict = {} #if no sh laod images and noramlize
+            rgb_path = self.rgb_images_paths[index]
+            rgb = np.array(Image.open(rgb_path))
+            # Reshape data from H x W x C to C x H x W
+            rgb = np.moveaxis(rgb, 2, 0)
+            # Define normalizing transform
+            # Convert image to float and map range from [0, 255] to [0.0, 1.0]. Then normalize
+            rgb = self.normalize(torch.Tensor(rgb.astype(np.float32) / 255.0))        
 
         exists = self.seg_image_exists[index]
         if exists:
@@ -187,17 +205,10 @@ class LitPerfception(data.Dataset):
         else:
             label_2d = torch.zeros((rgb.shape[1],rgb.shape[2]))
         
-        ret_dict = {'rgb':rgb,
-                    'label_2d':label_2d,} #add semantics and 
+        ret_dict.update ({'rgb':rgb,
+                    'label_2d':label_2d,} )#add semantics and  rgb 
         
-        if self.use_sh:
-            sh = np.load(self.sh_paths[index])['arr_0.npy']
-            sh = np.moveaxis(sh, 2, 0)
-            sh_mean = np.tile(self.sh_mean, (1,sh.shape[-2], sh.shape[-1]))
-            sh_std = np.tile(self.sh_std, (1,sh.shape[-2], sh.shape[-1]))
-            assert sh.shape == sh_mean.shape and sh.shape == sh_std.shape, f'Error in normalization shape {sh.shape}, {sh_mean.shape}, {sh_std.shape}'
-            sh = (sh-sh_mean)/sh_std
-            ret_dict.update({'sh':torch.Tensor(sh)})
+        
         
         if self.debug:
             ret_dict.update({'color':color,})
@@ -208,7 +219,7 @@ class LitPerfception(data.Dataset):
             if self.intrinsics_scale is None:
                 self.intrinsics_scale = [self.orgin_size[0]/rgb.shape[0], self.orgin_size[1]/rgb.shape[1]]
                 # max_image_dim/H inverting this
-            perf_intrinsics = self.perf_intrinsics[index]
+            perf_intrinsics = self.perf_intrinsics[index] #computing the instricns and adjsuting its scale
             intrinsic = perf_intrinsics.copy()
             intrinsic[0,:] *= self.intrinsics_scale[1]
             intrinsic[1,:] *= self.intrinsics_scale[0]

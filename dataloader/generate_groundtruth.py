@@ -22,8 +22,8 @@ def generate_groundtruth_render(
     
 ):
     image_out_size = scannet_scene.image_sizes[0].tolist()
-    print(image_out_size)#[480, 640]
-    if(compressed): image_out_size = [128,128]
+    # print(image_out_size)#[480, 640]
+    if(compressed): image_out_size = [124,124]
     start_idx = batch_id*batch_size
     end_idx = start_idx + batch_size
     if(end_idx>=scannet_scene.extrinsics.shape[0]): end_idx = scannet_scene.extrinsics.shape[0]
@@ -56,6 +56,9 @@ def generate_groundtruth_render(
         R=np.array(R),
         T=np.array(T)
     )
+    ### Bug where apparently for 1 items it creates a minimum of 3 cameras. 
+    if(len(scannet_scene.trans_info['frame_ids'][start_idx:end_idx])==1):
+        cameras = cameras[0]
 
     raster_settings = RasterizationSettings(
         image_size=image_out_size, blur_radius=0.0, faces_per_pixel=1, bin_size=None
@@ -69,12 +72,12 @@ def generate_groundtruth_render(
     meshes = mesh.extend(poses.shape[0])
 
     # Render the  mesh from each viewing angle
-    labels_, target_images = renderer(meshes, cameras=cameras, labels=labels, rgb= rgb)
+    labels_, target_images, depth = renderer(meshes, cameras=cameras, labels=labels, rgb= rgb)
     meshes.to("cpu")
     labels.to("cpu")
     if rgb is not None:
         rgb.to("cpu")
-    return labels_, target_images#[..., :3]
+    return labels_, target_images, depth#[..., :3]
 
     
 def generate_groundtruth_render_batch_in(

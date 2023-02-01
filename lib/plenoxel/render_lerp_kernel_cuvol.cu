@@ -109,7 +109,7 @@ __device__ __inline__ void trace_ray_cuvol(
                     lane_color_local, lane_colorgrp_id == 0
             );
             //lane_color[lane_id] = sigma * sh_total;
-            outsh += weight * sh;//*fmaxf(sh_total + 0.055f, 0.f); //sh_total;  // Clamp to [+0, infty)
+            outsh += weight * sh;//sh values times the transimitance summed for all samples i
             outv += weight * fmaxf(lane_color_total + 0.5f, 0.f);  // Clamp to [+0, infty)
             if (_EXP(log_transmit) < opt.stop_thresh) {
                 log_transmit = -1e3f;
@@ -121,7 +121,7 @@ __device__ __inline__ void trace_ray_cuvol(
 
     if (grid.background_nlayers == 0) {
         outv += _EXP(log_transmit) * opt.background_brightness;
-        outsh += _EXP(log_transmit) * opt.background_brightness;
+        outsh += _EXP(log_transmit) * opt.background_brightness; //adjust for backgorund brightness
     }
     lane_color[lane_id] = outsh;
     if (lane_colorgrp_id == 0) {

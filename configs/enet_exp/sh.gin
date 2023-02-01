@@ -1,7 +1,7 @@
 LitPerfception.perf_root = '/home/rozenberszki/Downloads/perf_render/' #path to rgb images
 LitPerfception.scannet_root = '/home/rozenberszki/Downloads/ScanNet/scans' #path to scannet (where label.ply could be found)
 
-additional_setup.workers=0
+additional_setup.workers=12
 additional_setup.print_step=25
 additional_setup.cls_weight_pth = None #'/workspace/class_dist.npy'
 additional_setup.save_many_checkpoints = True
@@ -17,6 +17,7 @@ hparams_setup.opt = False
 additional_setup.logs_dir='/home/rozenberszki/Downloads/logs/full_training'
 additional_setup.exp_name='sh'
 additional_setup.add_timestamp = False
+additional_setup.save_ckpt_every = 20
 hparams_setup.validate_every=5
 
 hparams_setup.batch_size=160
