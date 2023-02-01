@@ -340,7 +340,7 @@ if __name__ =="__main__":
     )
     parser.add_argument('-res','--resume', default=False, help="set True to resume training")
     parser.add_argument('-m','--mode',default="train", help="train, full, or test")
-    parser.add_argument('-c','--checkpoint', default=None, help="checkpoint to load name")
+    parser.add_argument('-c','--load_ckpt', default=None, type=str, help="checkpoint to load name")
     parser.add_argument(
         "--ginc",
         action="append",
@@ -377,6 +377,5 @@ if __name__ =="__main__":
         model = ENet(num_classes, use_sh = args.use_sh).to(device)
         optimizer = optim.Adam(model.parameters())
         model, optimizer, epoch, miou = load_checkpoint(model, optimizer, args.save_dir,
-									  args.checkpoint)
-        print(model)
+									  args.load_ckpt)
         test(model, val_loader, w_class, class_encoding, epoch)

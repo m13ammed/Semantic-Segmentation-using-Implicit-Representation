@@ -1,0 +1,33 @@
+ARGUMENTS
+add_timestamp: True
+allow_gen_lables: False
+batch_size: 160
+beta0: 0.7
+beta1: 0.999
+checkpoint: 0
+cls_weight_pth: None
+epochs: 1000
+exp_name: sh_novel_1675218227
+ginc: ['configs/enet_exp/sh_novel.gin']
+learning_rate: 0.001135
+log_image_every: 10
+logs_dir: /home/rozenberszki/Downloads/logs/full_training
+lr_decay: 0.525
+lr_decay_epochs: 60
+mode: train
+opt: False
+print_step: 25
+resume: False
+save_ckpt_every: 20
+save_dir: /home/rozenberszki/Downloads/logs/full_training/sh_novel_1675218227
+save_every_step: 100
+save_many_checkpoints: True
+use_original_norm: False
+use_sh: True
+validate_every: 5
+weight_decay: 0.003385
+workers: 6
+
+BEST VALIDATION
+Epoch: 420
+Mean IoU: 0.38980977431741576

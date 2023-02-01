@@ -178,6 +178,14 @@ chmod +x rgb_novel.sh
 ./rgb_novel.sh
 ```
 
+<!-- ## Testing
+1. Modify any of the training ginc files with the full experiment name
+2. We provided a checkpoint for testing in `analysis/sh_model/`
+```
+python run_enet.py --mode Test --load_ckpt 420.ckpt --ginc configs/enet_exp/test.gin 
+```
+3. Results will be logged on tensorboard. -->
+
 ## Blender Scripts
 To help with debugging, the team created some Blender Scripts that uses `BPY` to quickly visualize, debug, and export camera extrinsics.
 1. Navigate to the `blender_scripts/` directory

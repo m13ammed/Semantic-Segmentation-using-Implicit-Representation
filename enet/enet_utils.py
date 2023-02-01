@@ -71,7 +71,7 @@ def load_checkpoint(model, optimizer, folder_dir, filename):
     # Create folder to save model and information
     model_path = folder_dir
     if(filename is not None):
-        model_path = os.path.join(folder_dir, filename)
+        model_path = os.path.join(folder_dir, str(filename))
     assert os.path.isfile(
         model_path), "The model file \"{0}\" doesn't exist.".format(filename)
 
