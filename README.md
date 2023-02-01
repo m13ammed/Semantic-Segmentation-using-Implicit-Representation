@@ -214,6 +214,14 @@ create_dome(INITIAL_CAMERA_EXTRINSIC, MAX_ANGLE, TARGET_PT_IN_3D, INTERVALS, INT
 |-static #Resources for the README
 |-utils #Utility scripts used in several locations like exporting images and custom segmentation shader
 ```
+
+## Results
+![Performance Table](static/table.png)
+
+Comparison of the results achieved by using ScanNet Camera images, Rendered RGB images, Rendered RGB+SH images, Rendered RGB (+Novel Views), Rendered SH + RGB (+Novel Views)
+![SegmentationSample](static/SegmentationSample.jpg)
+Sample segmentation results showing segmentation of a Sofa and a Bed. Middle: Ground truth segmentation, Right: Our model.
+
 ## References:
 1. YoonwooJeong,SeungjooShin,JunhaLee,ChrisChoy,An- ima Anandkumar, Minsu Cho, and Jaesik Park. Perfcep- tion: Perception using radiance fields. [Github](https://github.com/POSTECH-CVLab/PeRFception)
 2. Angela Dai, Angel X Chang, Manolis Savva, Maciej Hal- ber, Thomas Funkhouser, and Matthias Nießner. Scannet: Richly-annotated 3d reconstructions of indoor scenes. [Website](http://www.scan-net.org/)
