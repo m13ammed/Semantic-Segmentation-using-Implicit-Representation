@@ -73,7 +73,7 @@ def _load_ply(f, *, path_manager: PathManager) -> Tuple[_PlyData,torch.Tensor, t
 
 def load_ply(
     f, *, path_manager: Optional[PathManager] = None
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: #modify to retrun the pure label from the ply
     """
     Adjusted version of pytorch3D to allow returing the label
     

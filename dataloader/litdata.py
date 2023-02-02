@@ -41,9 +41,30 @@ def load_plenoxel_scannet_data(
     max_image_dim=800,
     scannet_dir = None,
     square = False):
+    """
+    It loads the poses, intrinsics, and the transformation matrix from the dataset directory, and
+    returns the poses, render poses, image size, intrinsic matrix, train/test split, and the path to the
+    polygon file
     
+    :param datadir: the directory where the data is stored
+    :param scene_name: the name of the scene you want to load
+    :param cam_scale_factor: This is a scaling factor for the camera intrinsics
+    :param frame_skip: how many frames to skip between each frame, defaults to 1 (optional)
+    :param max_frame: the maximum number of frames to use. If -1, use all frames
+    :param max_image_dim: the maximum dimension of the image. If square is True, then the image will be
+    square, defaults to 800 (optional)
+    :param scannet_dir: the directory where the scannet dataset is stored
+    :param square: if True, the image will be resized to a square image, defaults to False (optional)
+    :return: poses: 
+            poses: [num_frames, 4, 4]
+            render_poses: [num_frames, 4, 4]
+            (H, W): (480, 640)
+            intrinsic: [4, 4]
+            (i_train, i_test, i_test): (array([ 0,  1,  2
+    """
     root_data_dir = datadir
     datadir = os.path.join(datadir,scene_name)
+    
     perfception_prefix = 'plenoxel_scannet_'#_vh_clean_2.labels.ply       
     if scannet_dir is None:
         data_path_scan = datadir
@@ -111,7 +132,7 @@ def load_plenoxel_scannet_data(
     
 
     
-    T = trans_info['T']
+    T = trans_info['T'] #transform poses into the plonexels frame
     render_poses = T @ poses
 
 
@@ -159,6 +180,7 @@ def load_plenoxel_scannet_data(
     )
 
 @gin.configurable()
+# It loads the data from the perfcepgion scannet dataset, and stores it in a format that is compatible for rendering color or creating segmentation annottations
 class LitDataPefceptionScannet(LitData):
     def __init__(
         self,
